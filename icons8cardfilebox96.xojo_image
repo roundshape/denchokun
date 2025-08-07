@@ -1,0 +1,46 @@
+#tag MultiImage
+Image icons8cardfilebox96
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAA8QzpcVXNlcnNcbW90b2lcTXlUYXNrc1xEZW5jaG9rdW5caWNvbnM4LWNhcmQtZmlsZS1ib3gtOTYucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
+		FullPath = C:\Users\motoi\MyTasks\Denchokun\icons8-card-file-box-96.png
+		PartialPath = icons8-card-file-box-96.png
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 96.00
+			Orientation = Any
+			Platform = 15
+			PPI = 72
+			VSize = 96.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAA8QzpcVXNlcnNcbW90b2lcTXlUYXNrc1xEZW5jaG9rdW5caWNvbnM4LWNhcmQtZmlsZS1ib3gtOTYucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
+		FullPath = C:\Users\motoi\MyTasks\Denchokun\icons8-card-file-box-96.png
+		PartialPath = icons8-card-file-box-96.png
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 96.00
+			Orientation = Any
+			Platform = 15
+			PPI = 144
+			VSize = 96.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAA8QzpcVXNlcnNcbW90b2lcTXlUYXNrc1xEZW5jaG9rdW5caWNvbnM4LWNhcmQtZmlsZS1ib3gtOTYucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
+		FullPath = C:\Users\motoi\MyTasks\Denchokun\icons8-card-file-box-96.png
+		PartialPath = icons8-card-file-box-96.png
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 96.00
+			Orientation = Any
+			Platform = 15
+			PPI = 216
+			VSize = 96.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+End Image
+#tag EndMultiImage

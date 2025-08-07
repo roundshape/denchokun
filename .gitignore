@@ -1,0 +1,68 @@
+# Xojo Build Files
+Builds*/
+build/
+
+# Xojo temporary files
+*.debug
+*.debug.*
+*.temp
+*.tmp
+
+# Xojo backup files
+*.bak
+*.backup
+
+# Windows executable files (generated)
+*.exe
+*.dll
+
+# macOS application bundles (generated)
+*.app/
+
+# Linux executables (generated)
+*.so
+
+# Xojo IDE preferences and user settings
+*.xojo_uistate
+*.xojo_toolbar_set
+
+# IDE temporary files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# Temporary folders
+temp/
+tmp/
+
+# Visual Studio Code
+.vscode/
+
+# JetBrains IDEs
+.idea/
+
+# Windows thumbnail cache
+ehthumbs.db
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Folder config file
+Desktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk

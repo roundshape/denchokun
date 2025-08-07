@@ -1,0 +1,40 @@
+#tag MultiImage
+Image LaunchPicture
+	#tag ImageRepresentation
+		SaveInfo = APHRcwECAQAAAAAyQzpcVXNlcnNcbW90b2lcTXlUYXNrc1xEZW5jaG9rdW5cTGF1bmNoUGljdHVyZS5qcGcDAAAAAAEABAAAAAABAAAAAAAAAA==
+		FullPath = C:\Users\motoi\MyTasks\Denchokun\LaunchPicture.jpg
+		PartialPath = LaunchPicture.jpg
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 432.00
+			Orientation = Any
+			Platform = 15
+			PPI = 72
+			VSize = 290.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+	#tag ImageRepresentation
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 432.00
+			Orientation = Any
+			Platform = 15
+			PPI = 144
+			VSize = 290.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+	#tag ImageRepresentation
+		#tag ImageSpecification
+			Comment = 
+			Device = 31
+			HSize = 432.00
+			Orientation = Any
+			Platform = 15
+			PPI = 216
+			VSize = 290.00
+		#tag EndImageSpecification
+	#tag EndImageRepresentation
+End Image
+#tag EndMultiImage
