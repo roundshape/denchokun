@@ -1699,7 +1699,7 @@ End
 		  
 		  if self.LastRegData <> nil then
 		    if self.LastRegData.IsSameAsNewData(self.BaseFolderPath.Text, self.DealPeriodPopupMenu.SelectedRowValue,_
-		       type, date, price.ToInteger, name, partner, remark, dropF ) then
+		      type, date, price.ToInteger, name, partner, remark, dropF ) then
 		      System.Beep
 		      self.MainStatusLabel.Text = "前回登録したデータと同じです"
 		      return

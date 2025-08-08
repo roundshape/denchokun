@@ -7,7 +7,7 @@
 		MacType=
 		Name=csv
 		UTI=
-		UTIConformsTo=,public.data
+		UTIConformsTo=, public.data
 		Description=
 		MimeType=text/plain
 		Imported=True

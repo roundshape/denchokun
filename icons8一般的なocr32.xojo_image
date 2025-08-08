@@ -3,7 +3,7 @@ Image icons8一般的なocr32
 	#tag ImageRepresentation
 		SaveInfo = APHRcwECAQAAAAA+QzpcVXNlcnNcbW90b2lcTXlUYXNrc1xEZW5jaG9rdW5caWNvbnM4LeS4gOiIrOeahOOBqm9jci0zMi5wbmcDAAAAAAEABAAAAAABAAAAAAAAAA==
 		FullPath = C:\Users\motoi\MyTasks\Denchokun\icons8-一般的なocr-32.png
-		PartialPath = icons8-一般的なocr-32.png
+		PartialPath = ..\..\MyTasks\Denchokun\icons8-一般的なocr-32.png
 		#tag ImageSpecification
 			Comment = 
 			Device = 31

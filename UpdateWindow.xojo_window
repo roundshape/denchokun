@@ -1318,7 +1318,7 @@ End
 		  end if
 		  //check object is in BaseFolder
 		  if left(obj.FolderItem.NativePath, self.BaseFolderPath.Text.Length) = self.BaseFolderPath.Text then
-		     return
+		    return
 		  end if
 		  
 		  

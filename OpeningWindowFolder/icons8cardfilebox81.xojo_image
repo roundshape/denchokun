@@ -3,7 +3,7 @@ Image icons8cardfilebox81
 	#tag ImageRepresentation
 		SaveInfo = APHRcwECAQAAAAA8QzpcVXNlcnNcbW90b2lcTXlUYXNrc1xEZW5jaG9rdW5caWNvbnM4LWNhcmQtZmlsZS1ib3gtODEucG5nAwAAAAABAAQAAAAAAQAAAAAAAAA=
 		FullPath = C:\Users\motoi\MyTasks\Denchokun\icons8-card-file-box-81.png
-		PartialPath = icons8-card-file-box-81.png
+		PartialPath = ..\..\MyTasks\Denchokun\icons8-card-file-box-81.png
 		#tag ImageSpecification
 			Comment = 
 			Device = 31

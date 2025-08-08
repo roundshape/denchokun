@@ -304,7 +304,7 @@ Protected Module MyLibrary
 		  m=f.IconMaskMBS(128)
 		  if p<>nil and m<>nil then
 		    r=New Picture(128,128,32)
-		     r.Graphics.DrawPicture p,0,0
+		    r.Graphics.DrawPicture p,0,0
 		    r.Mask.Graphics.DrawPicture m,0,0 
 		    Return r 
 		  end if

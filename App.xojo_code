@@ -1447,7 +1447,7 @@ Inherits DesktopApplication
 		Function UpdateDealinDifferentPeriod(db as SQLiteDatabase, basePath as string, oldPeriod as string, newPeriod as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
 		  var ret as string
 		  ret = App.InsertDeal(db, basePath, newPeriod, dealType, dealDate, dealName, dealPartner, dealRemark, price, _
-		   dropF, hash, regDate, false) //Since insert to newPeriod, this must not be update
+		  dropF, hash, regDate, false) //Since insert to newPeriod, this must not be update
 		  if ret.left(2) <> "OK" then
 		    return ret
 		  end if

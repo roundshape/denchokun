@@ -148,7 +148,7 @@ Protected Module TimeStampModule
 		  
 		  ///call pdf.WriteText 80.0, 320.0, "証明書発行者："+cert.IssuerO
 		  success = pdf.WriteFTextEx( 125.0, 600.0, 400.0, 40.0, pdf.ktaLeft, cert.IssuerO )
-		   //call pdf.WriteText 80.0, 350.0, "TSA URL："+tsaURL
+		  //call pdf.WriteText 80.0, 350.0, "TSA URL："+tsaURL
 		  success = pdf.WriteFTextEx( 125.0, 630.0, 400.0, 40.0, pdf.ktaLeft, tsaURL )
 		  
 		  call pdf.EndPage

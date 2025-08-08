@@ -42,7 +42,6 @@ Begin DesktopWindow ReasonDialog
       Scope           =   0
       TabIndex        =   11
       TabPanelIndex   =   0
-      TabStop         =   True
       Tooltip         =   ""
       Top             =   4
       Transparent     =   False
