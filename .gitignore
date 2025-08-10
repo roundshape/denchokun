@@ -76,3 +76,7 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+# User preference files (may contain sensitive information)
+*.pref
+Denchokun.pref
