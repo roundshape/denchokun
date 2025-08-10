@@ -9,55 +9,6 @@ Inherits DesktopApplication
 
 	#tag Event
 		Sub Opening()
-		  // Kasuya Motoi, MBS Complete, 202304, KRoR33LIs7ulD9euvZMJ3lkDp11D518U17JYopbPqcPucqvTyXNiF0SCUF0pOo==
-		  dim s as string = decodeBase64("S1JvUjMzTElzN3VsRDlldXZaTUo=", encodings.UTF8)
-		  dim p as string = decodeBase64("TUJTIENvbXBsZXRl", encodings.UTF8)
-		  dim n as string = decodeBase64("S2FzdXlhIE1vdG9p", encodings.UTF8)
-		  dim e as integer = 202304
-		  dim t as string = decodeBase64("M2xrRHAxMUQ1MThVMTdKWW9wYlBxY1B1Y3F2VHlYTmlGMFNDVUYwcE9vPT0=", encodings.UTF8)
-		  
-		  if not registerMBSPlugin(n, p, e, s+t) then
-		    MsgBox "MBS Plugin serial not valid?" 
-		    Quit
-		    Return
-		  end if
-		  
-		  // The Chilkat API can be unlocked for a fully-functional 30-day trial by passing any
-		  // string to the UnlockBundle method.  A program can unlock once at the start. Once unlocked,
-		  // all subsequently instantiated objects are created in the unlocked state. 
-		  // 
-		  // After licensing Chilkat, replace the "Anything for 30-day trial" with the purchased unlock code.
-		  // To verify the purchased unlock code was recognized, examine the contents of the LastErrorText
-		  // property after unlocking.  For example:
-		  Dim glob As New Chilkat.CkGlobal
-		  Dim success As Boolean
-		  success = glob.UnlockBundle("RNDSHP.CB1032024_CJq2X7Ln7R85")
-		  If (success <> True) Then
-		    System.DebugLog(glob.LastErrorText)
-		    Return
-		  End If
-		  
-		  Dim status As Int32
-		  status = glob.UnlockStatus
-		  If (status = 2) Then
-		    System.DebugLog("Unlocked using purchased unlock code.")
-		  Else
-		    System.DebugLog("Unlocked in trial mode.")
-		  End If
-		  
-		  // The LastErrorText can be examined in the success case to see if it was unlocked in
-		  // trial more, or with a purchased unlock code.
-		  System.DebugLog(glob.LastErrorText)
-		  
-		  // 1492217-09032024-2-8-780-7BCB058A567D0C0AAB737DCEE090058A-346EF8C00480EB77AC34299F17811405
-		  dim key as string = DecodeBase64("MTQ5MjIxNy0wOTAzMjAyNC0yLTgtNzgwLTdCQ0IwNThBNTY3RDBDMEFBQjczN0RDRUUwOTAwNThBLTM0NkVGOEMwMDQ4MEVCNzdBQzM0Mjk5RjE3ODExNDA1", encodings.UTF8)
-		  DynaPDFMBS.setLicenseKeyGlobal key
-		  
-		  
-		  var cryptKey as string = "NzczeWtrbXRp"
-		  var cryptedText as String = "Gnf07oGIRnycn99UT1XofmD0iFhBMUF+1/azuL0S0A4GC3HVMLyy8z0bmO6kdbryzM5OIeAKgviP2E3bJk0IPY0C2KJr59KSgEvGlg0uRdVJT5djrJpz"
-		  me.DbPassword = EncryptionModule.Decrypt(decodeBase64(cryptKey), cryptedText)
-		  
 		  //Check double app start
 		  mMutex = New Mutex("Denchokun")
 		  If Not mMutex.TryEnter Then
@@ -80,6 +31,15 @@ Inherits DesktopApplication
 		    MessageBox "cannot load preference"
 		    quit
 		    return
+		  end if
+		  // 既存のBaseFolderが無効な場合は初回起動相当として扱う
+		  var baseNode__ as XmlNode = XmlPref.GetNode("BaseFolder")
+		  if baseNode__ <> nil then
+		    var basePath__ as string = baseNode__.GetAttribute("path")
+		    var baseF__ as new FolderItem(basePath__, FolderItem.PathModes.Native)
+		    if baseF__ = nil or not baseF__.Exists or not baseF__.IsFolder then
+		      App.firstBoot = true
+		    end if
 		  end if
 		  
 		  me.InMDB = me.CreateInMDB()
@@ -106,6 +66,17 @@ Inherits DesktopApplication
 		  next
 		  launchWin.Close
 		  launchWin = nil
+		  
+		  // スプラッシュ後に設定ファイルからライセンスを試行。失敗時はダイアログ表示
+		  MBSRegistered = TryRegisterMBSFromPref()
+		  if not MBSRegistered then
+		    var licWin as new MBSLicenseWindow
+		    licWin.ShowModal
+		    if not App.MBSRegistered then
+		      Quit
+		      return
+		    end if
+		  end if
 		  
 		  me.MainWin = new MainWindow
 		  var periodWinNode as XmlNode = App.XmlPref.GetNode("DealPeriodWindow")
@@ -231,14 +202,12 @@ Inherits DesktopApplication
 		    //MessageBox "Can't find："+DealPeriod+"\Denchokun.db"
 		    return nil
 		  end if
-		  #if not DebugBuild then
-		    db.EncryptionKey = me.DbPassword
-		  #EndIf
+		  // SQLiteの暗号化キー設定は無効化
 		  Try
 		    db.Connect
 		  Catch error As DatabaseException
-		    try //try connect without EncryptionKey
-		      MessageBox DealPeriod+"(Denchokun.db) may not be encrypted" 
+		    try
+		      // 暗号化を使用しないため通常接続のみ
 		      db = new SQLiteDatabase
 		      db.DatabaseFile = me.GetDatabaseFile(DealPeriod)
 		      db.Connect
@@ -274,9 +243,7 @@ Inherits DesktopApplication
 		  db.DatabaseFile = DenchokunDBF
 		  Try
 		    db.CreateDatabase
-		    #if not DebugBuild then
-		      db.Encrypt(me.DbPassword)
-		    #EndIf
+		    // 新規DB作成時の暗号化は無効化
 		    
 		    Var sql As String
 		    sql = "CREATE TABLE ""Deals"" ("+_
@@ -884,25 +851,17 @@ Inherits DesktopApplication
 	#tag Method, Flags = &h0
 		Function InsertDeal(db as SQLiteDataBase, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, regDate as string, update as Boolean) As string
 		  
-		  var isTS as Boolean = App.CheckPreviouslyTimeStampedFile(dropF)
+		  var isTS as Boolean = false
 		  var newNO as string = App.CreateNewNO("")
 		  var ret as String
 		  if dropF.IsFolder then
-		    if App.tsaEnable then
-		      ret = me.InsertDealForFolderUnderTSAOn(db, newNO, basePath, period, type, dealDate, dealName, _
-		      dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
-		    else
-		      ret = me.InsertDealForFolderUnderTSAoff(db, newNO, basePath, period, type, dealDate, dealName, _
-		      dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
-		    end if
+		    // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
+		    ret = me.InsertDealForFolderUnderTSAoff(db, newNO, basePath, period, type, dealDate, dealName, _
+		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
 		  else
-		    if App.tsaEnable then
-		      ret = me.InsertDealForFileUnderTSAOn(db, newNO, basePath, period, type, dealDate, dealName, _
-		      dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
-		    else
-		      ret = me.InsertDealForFileUnderTSAoff(db, newNO, basePath, period, type, dealDate, dealName, _
-		      dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
-		    end if
+		    // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
+		    ret = me.InsertDealForFileUnderTSAoff(db, newNO, basePath, period, type, dealDate, dealName, _
+		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
 		  end if
 		  if ret = "OK" then
 		    return "OK:"+newNO
@@ -1104,24 +1063,11 @@ Inherits DesktopApplication
 		    Catch error as IOException
 		      return "NG:CreateFolder Error: " + error.Message
 		    end try
-		    var tsaPDF as FolderItem = TimeStampModule.DoTimeStamp(dropF)
-		    if tsaPDF = nil then
-		      storeF.Remove()
-		      return "NG:Failed to TimeStamp Error"
-		    end if
-		    try
-		      var tsaName as string = "ts_"+GetFilenameWithoutExtension(dropF.Name)+".pdf"
-		      tsaPDF.MoveTo storeF.Child(tsaName)
-		      tsaPDF = storeF.Child(tsaName) //tsaPDF is repointed, GOOD
-		    Catch error as IOException
-		      storeF.Remove()
-		      return "NG:tsaPDF.CopyTo Error: " + error.Message
-		    end Try
+		    // タイムスタンプ機能は削除
 		    
 		    try
 		      dropF.CopyTo storeF
 		    Catch error as IOException
-		      tsaPDF.Remove()
 		      storeF.Remove()
 		      return "NG:CopyTo Error: " + error.Message
 		    end Try
@@ -1289,26 +1235,12 @@ Inherits DesktopApplication
 		    return "NG:CreateFolder Error: " + error.Message
 		  end Try
 		  
-		  var tsaPDF as FolderItem = TimeStampModule.DoTimeStamp(zipF)
-		  if tsaPDF = nil then
-		    zipF.Remove  // zipF is in Temporary
-		    storeF.Remove()
-		    return "NG:Failed to TimeStamp Error"
-		  end if
-		  try
-		    tsaPDF.MoveTo storeF.Child("ts_"+dropF.Name+".pdf")
-		    tsaPDF = storeF.Child("ts_"+dropF.Name+".pdf")
-		  Catch error as IOException
-		    zipF.Remove  // zipF is in Temporary
-		    storeF.Remove()
-		    return "NG:tsaPDF.CopyTo Error: " + error.Message
-		  end Try
+		  // タイムスタンプ機能は削除
 		  
 		  try
 		    zipF.MoveTo storeF.Child(zipName)
 		  Catch error as IOException
 		    zipF.Remove()  // zipF is in Temporary
-		    tsaPDF.Remove()
 		    storeF.Remove()
 		    return "NG:CopyTo Error: " + error.Message
 		  end Try
@@ -1396,8 +1328,46 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub SetMBSRegistered(value as Boolean)
+		  MBSRegistered = value
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function TryRegisterMBSFromPref() As Boolean
+		  // 設定ファイルから取得し、全部そろっていれば registerMBSPlugin を実行
+		  var licenseInfo as Dictionary = App.XmlPref.GetMBSLicense()
+		  if licenseInfo = nil then
+		    return False
+		  end if
+		  
+		  Var name As String = licenseInfo.Value("Name").StringValue
+		  Var product As String = licenseInfo.Value("Product").StringValue
+		  Var yms As String = licenseInfo.Value("YearMonth").StringValue
+		  Var serial As String = licenseInfo.Value("SerialKey").StringValue
+		  
+		  if name.Trim = "" or product.Trim = "" or yms.Trim = "" or serial.Trim = "" then
+		    return False
+		  end if
+		  
+		  if yms.Length <> 6 or not yms.IsNumeric then
+		    return False
+		  end if
+		  
+		  Var ym As Integer
+		  Try
+		    ym = Integer.FromString(yms)
+		  Catch
+		    return False
+		  End Try
+		  
+		  Return registerMBSPlugin(name, product, ym, serial)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function UpdateDeal(db as SQliteDatabase, updatedItems as string, basePath as string, oldPeriod as string, newPeriod as string, dealNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, dealPrice as integer, dropF as folderitem) As string
-		  var isTS as Boolean = App.CheckPreviouslyTimeStampedFile(dropF)
+		  var isTS as Boolean = false
 		  var dic as Dictionary = App.GetRegDateAndHash(oldPeriod, dealNO)
 		  var oldHash as string = dic.Value("Hash").StringValue
 		  var regDate as string = dic.Value("RegDate").StringValue
@@ -1489,13 +1459,9 @@ Inherits DesktopApplication
 	#tag Method, Flags = &h0
 		Function UpdateDealinSamePeriodForFile(db as SQLiteDatabase, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
 		  var ret, sql as string
-		  if App.tsaEnable then
-		    ret = App.InsertDealForFileUnderTSAOn(db, newNO, basePath, period, dealType, dealDate, dealName, _
-		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
-		  else
-		    ret = App.InsertDealForFileUnderTSAOff(db, newNO, basePath, period, dealType, dealDate, dealName, _
-		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
-		  end if
+		  // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
+		  ret = App.InsertDealForFileUnderTSAOff(db, newNO, basePath, period, dealType, dealDate, dealName, _
+		  dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
 		  if ret <> "OK" then
 		    return ret
 		  end if
@@ -1523,13 +1489,9 @@ Inherits DesktopApplication
 	#tag Method, Flags = &h0
 		Function UpdateDealinSamePeriodForFolder(db as SQLiteDatabase, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
 		  var ret, sql as string
-		  if App.tsaEnable then
-		    ret = App.InsertDealForFolderUnderTSAOn(db, newNO, basePath, period, dealType, dealDate, dealName, _
-		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
-		  else
-		    ret = App.InsertDealForFolderUnderTSAOff(db, newNO, basePath, period, dealType, dealDate, dealName, _
-		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
-		  end if
+		  // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
+		  ret = App.InsertDealForFolderUnderTSAOff(db, newNO, basePath, period, dealType, dealDate, dealName, _
+		  dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
 		  if ret <> "OK:" then
 		    return ret
 		  end if
@@ -1576,10 +1538,6 @@ Inherits DesktopApplication
 
 
 	#tag Property, Flags = &h0
-		DbPassword As string
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
 		firstBoot As Boolean
 	#tag EndProperty
 
@@ -1620,15 +1578,15 @@ Inherits DesktopApplication
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
+		MBSRegistered As Boolean
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		mMutex As Mutex
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		OCR As OCRClass
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
-		tsaEnable As Boolean
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -1853,14 +1811,6 @@ Inherits DesktopApplication
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="DbPassword"
-			Visible=false
-			Group="Behavior"
-			InitialValue=""
-			Type="string"
-			EditorType="MultiLineEditor"
-		#tag EndViewProperty
-		#tag ViewProperty
 			Name="FunctionReturn"
 			Visible=false
 			Group="Behavior"
@@ -1869,7 +1819,7 @@ Inherits DesktopApplication
 			EditorType="MultiLineEditor"
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="tsaEnable"
+			Name="MBSRegistered"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""

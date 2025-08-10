@@ -994,7 +994,7 @@ End
 		    self.StatusLabel.Text = "BaseFolder is nil"
 		    return
 		  end if
-		  if not baseF.Exists then
+		  if not baseF.Exists or not baseF.IsFolder then
 		    self.StatusLabel.Text = "BaseFolder doesn't exist"
 		    return
 		  end if
@@ -1660,8 +1660,7 @@ End
 			"6 - Rounded Window"
 			"7 - Global Floating Window"
 			"8 - Sheet Window"
-			"9 - Metal Window"
-			"11 - Modeless Dialog"
+			"9 - Modeless Dialog"
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty

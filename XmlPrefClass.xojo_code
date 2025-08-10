@@ -48,6 +48,28 @@ Inherits XmlDocument
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function GetMBSLicense() As Dictionary
+		  var mbsNode as XmlNode = me.GetNode("MBSLicense")
+		  if mbsNode = nil then
+		    return nil
+		  end if
+		  
+		  var name as string = mbsNode.GetAttribute("Name")
+		  var product as string = mbsNode.GetAttribute("Product")
+		  var yearMonth as string = mbsNode.GetAttribute("YearMonth")
+		  var serialKey as string = mbsNode.GetAttribute("SerialKey")
+		  
+		  var result as new Dictionary
+		  result.Value("Name") = name
+		  result.Value("Product") = product
+		  result.Value("YearMonth") = yearMonth
+		  result.Value("SerialKey") = serialKey
+		  
+		  return result
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function GetNode(nodename as string) As XmlNode
 		  var child as XmlNode
 		  var childname as string
@@ -236,12 +258,7 @@ Inherits XmlDocument
 		    node = ocrNode.AppendChild(ocrOutputNode)
 		    node = root.AppendChild(ocrNode)
 		    
-		    var timeStampNode as XmlNode = me.CreateElement("TimeStamp")
-		    timeStampNode.SetAttribute( "enable", "false" )
-		    timeStampNode.SetAttribute( "pfxpath", "" )
-		    timeStampNode.SetAttribute( "pfxpassword", "" )
-		    timeStampNode.SetAttribute( "tsaurl", "http://timestamp.digicert.com" )
-		    node = root.AppendChild(timeStampNode)
+		    // TimeStamp node removed
 		  else
 		    node = me.GetNode("OCR")
 		    if node = nil then //Set defaults
@@ -261,15 +278,7 @@ Inherits XmlDocument
 		      node = root.Insert(ocrNode,beforeNode)
 		    end if
 		    
-		    node = me.GetNode("TimeStamp")
-		    if node = nil then //Set defaults
-		      var timeStampNode as XmlNode = me.CreateElement("TimeStamp")
-		      timeStampNode.SetAttribute( "enable", "false" )
-		      timeStampNode.SetAttribute( "pfxpath", "" )
-		      timeStampNode.SetAttribute( "pfxpassword", "" )
-		      timeStampNode.SetAttribute( "tsaurl", "http://timestamp.digicert.com" )
-		      node = root.Insert(timeStampNode,beforeNode)
-		    end if
+		    // TimeStamp node removed
 		  end if
 		  
 		  
@@ -350,11 +359,7 @@ Inherits XmlDocument
 		    end if
 		  end if
 		  
-		  App.tsaEnable =false
-		  var tsaEnable as string = me.GetNodeAttribute("TimeStamp", "enable" )
-		  if tsaEnable = "true" then
-		    App.tsaEnable = true
-		  end if
+		  // タイムスタンプ機能は無効化
 		  
 		  return 0
 		  
@@ -465,6 +470,24 @@ Inherits XmlDocument
 		    return
 		  Exception errRun as RuntimeException
 		    return
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SetMBSLicense(name as string, product as string, yearMonth as string, serialKey as string)
+		  var root as XmlNode = me.FirstChild
+		  var mbsNode as XmlNode = me.GetNode("MBSLicense")
+		  
+		  if mbsNode = nil then
+		    // MBSLicenseノードがない場合は新規作成
+		    var elem as XmlElement = me.CreateElement("MBSLicense")
+		    mbsNode = root.AppendChild(elem)
+		  end if
+		  
+		  mbsNode.SetAttribute("Name", name)
+		  mbsNode.SetAttribute("Product", product)
+		  mbsNode.SetAttribute("YearMonth", yearMonth)
+		  mbsNode.SetAttribute("SerialKey", serialKey)
 		End Sub
 	#tag EndMethod
 

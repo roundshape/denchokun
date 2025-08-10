@@ -13,14 +13,14 @@ Begin DesktopWindow SetupWindow
    Height          =   423
    ImplicitInstance=   True
    MacProcID       =   0
-   MaximumHeight   =   379
-   MaximumWidth    =   537
+   MaximumHeight   =   32000
+   MaximumWidth    =   32000
    MenuBar         =   ""
    MenuBarVisible  =   False
-   MinimumHeight   =   379
-   MinimumWidth    =   537
+   MinimumHeight   =   64
+   MinimumWidth    =   64
    Resizeable      =   False
-   Title           =   "環境設定"
+   Title           =   ""
    Type            =   1
    Visible         =   True
    Width           =   542
@@ -51,7 +51,7 @@ Begin DesktopWindow SetupWindow
       Index           =   -2147483648
       InitialValue    =   "取引種別"
       Italic          =   False
-      Left            =   0
+      Left            =   1
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
@@ -64,7 +64,7 @@ Begin DesktopWindow SetupWindow
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   0
+      Top             =   -1
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -85,7 +85,7 @@ Begin DesktopWindow SetupWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   81
+      Left            =   82
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
@@ -97,7 +97,7 @@ Begin DesktopWindow SetupWindow
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   382
+      Top             =   381
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -116,7 +116,7 @@ Begin DesktopWindow SetupWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   393
+      Left            =   394
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   False
@@ -128,7 +128,7 @@ Begin DesktopWindow SetupWindow
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   382
+      Top             =   381
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -147,7 +147,7 @@ Begin DesktopWindow SetupWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   9
+      Left            =   10
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
@@ -155,11 +155,11 @@ Begin DesktopWindow SetupWindow
       LockTop         =   False
       MacButtonStyle  =   0
       Scope           =   0
-      TabIndex        =   4
+      TabIndex        =   3
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   347
+      Top             =   346
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -178,7 +178,7 @@ Begin DesktopWindow SetupWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   50
+      Left            =   51
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
@@ -186,11 +186,11 @@ Begin DesktopWindow SetupWindow
       LockTop         =   False
       MacButtonStyle  =   0
       Scope           =   0
-      TabIndex        =   5
+      TabIndex        =   4
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   347
+      Top             =   346
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -204,7 +204,7 @@ Begin DesktopWindow SetupWindow
       Height          =   347
       Index           =   -2147483648
       InitialParent   =   ""
-      Left            =   173
+      Left            =   174
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -212,10 +212,10 @@ Begin DesktopWindow SetupWindow
       LockTop         =   True
       PanelIndex      =   0
       Scope           =   0
-      TabIndex        =   6
+      TabIndex        =   5
       TabPanelIndex   =   0
       Tooltip         =   ""
-      Top             =   0
+      Top             =   -1
       Transparent     =   False
       Visible         =   True
       Width           =   15
@@ -235,18 +235,18 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   206
+      Left            =   207
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
       LockRight       =   True
       LockTop         =   True
       Scope           =   0
-      TabIndex        =   7
+      TabIndex        =   6
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   23
+      Top             =   22
       Transparent     =   False
       Underline       =   False
       Value           =   False
@@ -265,18 +265,18 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   206
+      Left            =   207
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
       LockRight       =   True
       LockTop         =   True
       Scope           =   0
-      TabIndex        =   8
+      TabIndex        =   7
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   45
+      Top             =   44
       Transparent     =   False
       Underline       =   False
       Value           =   False
@@ -294,7 +294,7 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   193
+      Left            =   194
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -303,14 +303,14 @@ Begin DesktopWindow SetupWindow
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
-      TabIndex        =   10
+      TabIndex        =   8
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   "期間ウインドウ"
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   6
+      Top             =   5
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -327,18 +327,18 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   346
+      Left            =   347
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
       LockRight       =   True
       LockTop         =   True
       Scope           =   0
-      TabIndex        =   11
+      TabIndex        =   9
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   23
+      Top             =   22
       Transparent     =   False
       Underline       =   False
       Value           =   False
@@ -356,7 +356,7 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   340
+      Left            =   341
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -365,14 +365,14 @@ Begin DesktopWindow SetupWindow
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
-      TabIndex        =   12
+      TabIndex        =   10
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   "全期間ウインドウ"
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   6
+      Top             =   5
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -388,7 +388,7 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   193
+      Left            =   194
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -397,14 +397,14 @@ Begin DesktopWindow SetupWindow
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
-      TabIndex        =   13
+      TabIndex        =   11
       TabPanelIndex   =   0
       TabStop         =   False
       Text            =   "OCR設定"
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   73
+      Top             =   72
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -421,7 +421,7 @@ Begin DesktopWindow SetupWindow
       Index           =   -2147483648
       InitialValue    =   ""
       Italic          =   False
-      Left            =   414
+      Left            =   415
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -429,11 +429,11 @@ Begin DesktopWindow SetupWindow
       LockTop         =   True
       Scope           =   0
       SelectedRowIndex=   0
-      TabIndex        =   14
+      TabIndex        =   12
       TabPanelIndex   =   0
       TabStop         =   False
       Tooltip         =   ""
-      Top             =   99
+      Top             =   98
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -456,7 +456,7 @@ Begin DesktopWindow SetupWindow
       Hint            =   ""
       Index           =   -2147483648
       Italic          =   False
-      Left            =   214
+      Left            =   215
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   False
@@ -466,14 +466,14 @@ Begin DesktopWindow SetupWindow
       Password        =   False
       ReadOnly        =   False
       Scope           =   0
-      TabIndex        =   15
+      TabIndex        =   13
       TabPanelIndex   =   0
       TabStop         =   False
       Text            =   ""
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   99
+      Top             =   98
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
@@ -497,7 +497,7 @@ Begin DesktopWindow SetupWindow
       Hint            =   ""
       Index           =   -2147483648
       Italic          =   False
-      Left            =   254
+      Left            =   255
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -507,14 +507,14 @@ Begin DesktopWindow SetupWindow
       Password        =   False
       ReadOnly        =   False
       Scope           =   0
-      TabIndex        =   16
+      TabIndex        =   14
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   ""
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   127
+      Top             =   126
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
@@ -531,7 +531,7 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   214
+      Left            =   215
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -540,14 +540,14 @@ Begin DesktopWindow SetupWindow
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
-      TabIndex        =   17
+      TabIndex        =   15
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   "Work："
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   126
+      Top             =   125
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -570,7 +570,7 @@ Begin DesktopWindow SetupWindow
       Hint            =   ""
       Index           =   -2147483648
       Italic          =   False
-      Left            =   285
+      Left            =   286
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -580,14 +580,14 @@ Begin DesktopWindow SetupWindow
       Password        =   False
       ReadOnly        =   False
       Scope           =   0
-      TabIndex        =   18
+      TabIndex        =   16
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   ""
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   151
+      Top             =   150
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
@@ -604,7 +604,80 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   214
+      Left            =   215
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   False
+      TabIndex        =   17
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "Process lib："
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   ""
+      Top             =   149
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   68
+   End
+   Begin DesktopTextField MainLibraryPathField
+      AllowAutoDeactivate=   True
+      AllowFocusRing  =   True
+      AllowSpellChecking=   False
+      AllowTabs       =   False
+      BackgroundColor =   &cFFFFFF
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Format          =   ""
+      HasBorder       =   True
+      Height          =   22
+      Hint            =   ""
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   272
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      MaximumCharactersAllowed=   0
+      Password        =   False
+      ReadOnly        =   False
+      Scope           =   0
+      TabIndex        =   18
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   ""
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   ""
+      Top             =   173
+      Transparent     =   False
+      Underline       =   False
+      ValidationMask  =   ""
+      Visible         =   True
+      Width           =   251
+   End
+   Begin DesktopLabel WorkLabel2
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   20
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   215
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -616,17 +689,17 @@ Begin DesktopWindow SetupWindow
       TabIndex        =   19
       TabPanelIndex   =   0
       TabStop         =   True
-      Text            =   "Process lib："
+      Text            =   "Main lib："
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   150
+      Top             =   172
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   68
+      Width           =   55
    End
-   Begin DesktopTextField MainLibraryPathField
+   Begin DesktopTextField TessDataPathField
       AllowAutoDeactivate=   True
       AllowFocusRing  =   True
       AllowSpellChecking=   False
@@ -660,80 +733,7 @@ Begin DesktopWindow SetupWindow
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   174
-      Transparent     =   False
-      Underline       =   False
-      ValidationMask  =   ""
-      Visible         =   True
-      Width           =   251
-   End
-   Begin DesktopLabel WorkLabel2
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   214
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      Multiline       =   False
-      Scope           =   0
-      Selectable      =   False
-      TabIndex        =   21
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   "Main lib："
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   173
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   55
-   End
-   Begin DesktopTextField TessDataPathField
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   True
-      AllowSpellChecking=   False
-      AllowTabs       =   False
-      BackgroundColor =   &cFFFFFF
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Format          =   ""
-      HasBorder       =   True
-      Height          =   22
-      Hint            =   ""
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   270
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MaximumCharactersAllowed=   0
-      Password        =   False
-      ReadOnly        =   False
-      Scope           =   0
-      TabIndex        =   22
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   ""
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   198
+      Top             =   197
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
@@ -750,7 +750,7 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   214
+      Left            =   215
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -759,14 +759,14 @@ Begin DesktopWindow SetupWindow
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
-      TabIndex        =   23
+      TabIndex        =   21
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   "tessdata："
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   197
+      Top             =   196
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -789,7 +789,7 @@ Begin DesktopWindow SetupWindow
       Hint            =   ""
       Index           =   -2147483648
       Italic          =   False
-      Left            =   282
+      Left            =   283
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -799,14 +799,14 @@ Begin DesktopWindow SetupWindow
       Password        =   False
       ReadOnly        =   False
       Scope           =   0
-      TabIndex        =   24
+      TabIndex        =   22
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   ""
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   222
+      Top             =   221
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
@@ -823,7 +823,7 @@ Begin DesktopWindow SetupWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   214
+      Left            =   215
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -832,422 +832,23 @@ Begin DesktopWindow SetupWindow
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
-      TabIndex        =   25
+      TabIndex        =   23
       TabPanelIndex   =   0
       TabStop         =   True
       Text            =   "Languages："
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   221
+      Top             =   220
       Transparent     =   False
       Underline       =   False
       Visible         =   True
       Width           =   66
    End
-   Begin DesktopLabel Label4
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   193
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   False
-      LockRight       =   True
-      LockTop         =   True
-      Multiline       =   False
-      Scope           =   0
-      Selectable      =   False
-      TabIndex        =   26
-      TabPanelIndex   =   0
-      TabStop         =   False
-      Text            =   "タイムスタンプ設定"
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   256
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   111
-   End
-   Begin DesktopTextField PfxFilePathField
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   True
-      AllowSpellChecking=   False
-      AllowTabs       =   False
-      BackgroundColor =   &cFFFFFF
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Format          =   ""
-      HasBorder       =   True
-      Height          =   22
-      Hint            =   ""
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   241
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MaximumCharactersAllowed=   0
-      Password        =   False
-      ReadOnly        =   False
-      Scope           =   0
-      TabIndex        =   27
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   ""
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   278
-      Transparent     =   False
-      Underline       =   False
-      ValidationMask  =   ""
-      Visible         =   True
-      Width           =   245
-   End
-   Begin DesktopLabel PfxLabel
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   211
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      Multiline       =   False
-      Scope           =   0
-      Selectable      =   False
-      TabIndex        =   28
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   "Pfx："
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   278
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   31
-   End
-   Begin DesktopButton pfxButton
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Cancel          =   False
-      Caption         =   "参照"
-      Default         =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   22
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   488
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MacButtonStyle  =   0
-      Scope           =   0
-      TabIndex        =   29
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Tooltip         =   ""
-      Top             =   278
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   31
-   End
-   Begin DesktopCheckBox EnableTimeStampCheck
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Caption         =   "有効"
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   349
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   False
-      LockRight       =   True
-      LockTop         =   True
-      Scope           =   0
-      TabIndex        =   30
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Tooltip         =   ""
-      Top             =   257
-      Transparent     =   False
-      Underline       =   False
-      Value           =   False
-      Visible         =   True
-      VisualState     =   0
-      Width           =   152
-   End
-   Begin DesktopTextField PfxPasswordField
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   True
-      AllowSpellChecking=   False
-      AllowTabs       =   False
-      BackgroundColor =   &cFFFFFF
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Format          =   ""
-      HasBorder       =   True
-      Height          =   22
-      Hint            =   ""
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   269
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MaximumCharactersAllowed=   0
-      Password        =   True
-      ReadOnly        =   False
-      Scope           =   0
-      TabIndex        =   31
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   ""
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   303
-      Transparent     =   False
-      Underline       =   False
-      ValidationMask  =   ""
-      Visible         =   True
-      Width           =   249
-   End
-   Begin DesktopLabel PfxPasswordLabel
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      InitialParent   =   ""
-      Italic          =   False
-      Left            =   211
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      Multiline       =   False
-      Scope           =   0
-      Selectable      =   False
-      TabIndex        =   32
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   "パスワード："
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   303
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   57
-   End
-   Begin DesktopTextField TSAUrlField
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   True
-      AllowSpellChecking=   False
-      AllowTabs       =   False
-      BackgroundColor =   &cFFFFFF
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Format          =   ""
-      HasBorder       =   True
-      Height          =   22
-      Hint            =   ""
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   269
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MaximumCharactersAllowed=   0
-      Password        =   False
-      ReadOnly        =   False
-      Scope           =   0
-      TabIndex        =   33
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   ""
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   328
-      Transparent     =   False
-      Underline       =   False
-      ValidationMask  =   ""
-      Visible         =   True
-      Width           =   248
-   End
-   Begin DesktopLabel TSAUrlLabel
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   211
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      Multiline       =   False
-      Scope           =   0
-      Selectable      =   False
-      TabIndex        =   34
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   "TSA URL："
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   328
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   57
-   End
 End
 #tag EndDesktopWindow
 
 #tag WindowCode
-	#tag Event
-		Sub Opening()
-		  self.DealKindList.ColumnAlignmentAt(0)=DesktopListBox.Alignments.Center
-		  
-		  var docType as XmlNode = App.XmlPref.GetNode("DocType")
-		  self.DealKindList.RemoveAllRows
-		  var aType as XmlNode = docType.FirstChild
-		  while aType <> nil
-		    var type as string = aType.FirstChild.Value
-		    self.DealKindList.AddRow type
-		    aType = aType.NextSibling
-		  Wend
-		  
-		  self.DealKindList.ColumnSortDirectionAt(0) = DesktopListBox.SortDirections.None
-		  
-		  var periodWinNode as XmlNode = App.XmlPref.GetNode("DealPeriodWindow")
-		  var startup as string = periodWinNode.GetAttribute("Startup")
-		  if startup = "on" then
-		    self.PeriodWinStartCheck.Value = true
-		  else
-		    self.PeriodWinStartCheck.Value = false
-		  end if
-		  var searchOrder as string = periodWinNode.GetAttribute("SearchOrder")
-		  if searchOrder = "asc" then
-		    self.PeriodWinSearchOrderCheck.value = false
-		  else
-		    self.PeriodWinSearchOrderCheck.Value = true
-		  end if
-		  
-		  var allPeriodWinNode as XmlNode = App.XmlPref.GetNode("DealPeriodWindow")
-		  searchOrder = allPeriodWinNode.GetAttribute("SearchOrder")
-		  if searchOrder = "asc" then
-		    self.PeriodWinSearchOrderCheck.value = false
-		  else
-		    self.PeriodWinSearchOrderCheck.Value = true
-		  end if
-		  
-		  var ocrNode as XmlNode = App.XmlPref.GetNode("OCR")
-		  var ocrSetupNode as XmlNode = ocrNode.FirstChild
-		  while ocrSetupNode <> nil
-		    if ocrSetupNode.Name = "Setup" then
-		      exit
-		    end if
-		    ocrSetupNode = ocrSetupNode.NextSibling
-		  wend
-		  var ocrOutputNode as XmlNode = ocrNode.FirstChild
-		  while ocrOutputNode <> nil
-		    if ocrOutputNode.Name = "Output" then
-		      exit
-		    end if
-		    ocrOutputNode = ocrOutputNode.NextSibling
-		  wend
-		  self.WorkingDirectoryField.Text = ocrSetupNode.GetAttribute("workingDirectory")
-		  self.ProcessLibraryPathField.Text = ocrSetupNode.GetAttribute("processLib")
-		  self.MainLibraryPathField.Text = ocrSetupNode.GetAttribute("mainLib")
-		  self.TessDataPathField.Text = ocrSetupNode.GetAttribute("tessdata")
-		  self.LanguagesField.Text = ocrSetupNode.GetAttribute("languages")
-		  self.OCRTextFileNameField.Text = ocrOutputNode.GetAttribute("filename")
-		  var ocrTextEncode as String = ocrOutputNode.GetAttribute("encoding")
-		  self.OCREncodePopupMenu.RemoveAllRows
-		  self.OCREncodePopupMenu.AddRow "UTF8"
-		  self.OCREncodePopupMenu.AddRow "ShiftJIS"
-		  if ocrTextEncode = "UTF8" then
-		    self.OCREncodePopupMenu.SelectedRowIndex = 0
-		  else
-		    self.OCREncodePopupMenu.SelectedRowIndex = 1
-		  end if
-		  
-		  var timeStampNode as XmlNode = App.XmlPref.GetNode("TimeStamp")
-		  var enableTS as string = timeStampNode.GetAttribute("enable")
-		  if enableTS = "true" then
-		    self.EnableTimeStampCheck.Value = true
-		  else
-		    self.EnableTimeStampCheck.Value = false
-		  end if
-		  self.PfxFilePathField.Text = timeStampNode.GetAttribute("pfxpath")
-		  var cryptedPassword as string = timeStampNode.GetAttribute("pfxpassword")
-		  var decryptedPassword as string = EncryptionModule.Decrypt( "773ykkmti", cryptedPassword )
-		  self.PfxPasswordField.Text = decryptedPassword
-		  self.TSAUrlField.Text = timeStampNode.GetAttribute("tsaurl")
-		  
-		  
-		End Sub
-	#tag EndEvent
-
-
 #tag EndWindowCode
 
 #tag Events DealKindList
@@ -1323,19 +924,7 @@ End
 		  ocrOutputNode.SetAttribute("filename",self.OCRTextFileNameField.Text)
 		  ocrOutputNode.SetAttribute("encoding",self.OCREncodePopupMenu.SelectedRowValue)
 		  
-		  var timeStampNode as XmlNode = App.XmlPref.GetNode("TimeStamp")
-		  if self.EnableTimeStampCheck.Value then
-		    timeStampNode.SetAttribute("enable", "true")
-		    App.tsaEnable = true
-		  else
-		    timeStampNode.SetAttribute("enable", "false")
-		    App.tsaEnable = false
-		  end if
-		  timeStampNode.SetAttribute("pfxpath",self.PfxFilePathField.Text)
-		  var decryptedPassword as string = self.PfxPasswordField.Text
-		  var cryptedPassword as string = EncryptionModule.Encrypt("773ykkmti", decryptedPassword )
-		  timeStampNode.SetAttribute("pfxpassword",cryptedPassword)
-		  timeStampNode.SetAttribute("tsaurl",self.TSAUrlField.Text )
+		  // Timestamp settings removed
 		  
 		  
 		  
@@ -1369,24 +958,6 @@ End
 		  end if
 		  
 		  self.DealKindList.RemoveRowAt(self.DealKindList.SelectedRowIndex)
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events pfxButton
-	#tag Event
-		Sub Pressed()
-		  Var dlg As OpenFileDialog
-		  Var f As FolderItem
-		  dlg = New OpenFileDialog
-		  
-		  dlg.InitialFolder = SpecialFolder.Desktop
-		  dlg.Title = "pfxファイルを選択してください"
-		  dlg.Filter = PfxFileType.pfx 
-		  f = dlg.ShowModal
-		  if f = nil then
-		    return
-		  end if
-		  self.PfxFilePathField.Text = f.NativePath
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -1480,8 +1051,7 @@ End
 			"6 - Rounded Window"
 			"7 - Global Floating Window"
 			"8 - Sheet Window"
-			"9 - Metal Window"
-			"11 - Modeless Dialog"
+			"9 - Modeless Dialog"
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
@@ -1550,7 +1120,7 @@ End
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
-		Visible=false
+		Visible=true
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
@@ -1582,7 +1152,7 @@ End
 	#tag ViewProperty
 		Name="ImplicitInstance"
 		Visible=true
-		Group="Windows Behavior"
+		Group="Window Behavior"
 		InitialValue="True"
 		Type="Boolean"
 		EditorType=""

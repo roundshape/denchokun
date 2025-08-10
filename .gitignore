@@ -1,3 +1,12 @@
+# Xojo build outputs
+Builds - Denchokun*/
+
+# Inno Setup generated installer at repo root
+/Denchokun-*.exe
+
+# Windows thumbnail cache, etc. (optional safety)
+Thumbs.db
+Desktop.ini
 # Xojo Build Files
 Builds*/
 build/
@@ -25,6 +34,7 @@ build/
 # Xojo IDE preferences and user settings
 *.xojo_uistate
 *.xojo_toolbar_set
+*.xojo_binary_project
 
 # IDE temporary files
 .DS_Store

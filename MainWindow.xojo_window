@@ -1105,11 +1105,11 @@ End
 		  end if
 		  
 		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string =base.GetAttribute("path")
-		  var baseF as folderitem
-		  baseF = new FolderItem(basePath, FolderItem.PathModes.Native)
-		  if baseF = nil then
-		    self.MainStatusLabel.Text = "ベースフォルダが見つかりません"
+		  var basePath as string = base.GetAttribute("path")
+		  var baseF as FolderItem = new FolderItem(basePath, FolderItem.PathModes.Native)
+		  if baseF = nil or not baseF.Exists then
+		    self.MainStatusLabel.Text = "ベースフォルダが存在しません。選択してください"
+		    self.BaseFolderPath.Text = ""
 		    return
 		  end if
 		  self.BaseFolderPath.Text = basePath
@@ -1202,6 +1202,10 @@ End
 		  self.DealPeriodPopupMenu.RemoveAllRows
 		  
 		  var folderNames() as string
+		  if baseF = nil or not baseF.Exists or not baseF.IsFolder then
+		    // ベースフォルダが無い/不正なときは何も表示しない
+		    return
+		  end if
 		  For Each aFolder As FolderItem In baseF.Children(false)
 		    if not aFolder.IsFolder or aFolder.IsAlias or not aFolder.Visible or aFolder.name.Left(1) = "." then
 		      Continue
@@ -1923,8 +1927,7 @@ End
 			"6 - Rounded Window"
 			"7 - Global Floating Window"
 			"8 - Sheet Window"
-			"9 - Metal Window"
-			"11 - Modeless Dialog"
+			"9 - Modeless Dialog"
 		#tag EndEnumValues
 	#tag EndViewProperty
 	#tag ViewProperty
