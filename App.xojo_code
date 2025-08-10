@@ -1250,41 +1250,6 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function IsTSAFolder(basePath as string, period as string, db as SQLiteDatabase, NO as string) As string
-		  //base+period+NOがフォルダであれば必ずTimeStampされている
-		  var sql as string = "select DealDate, DealPartner, DealPrice, FilePath from Deals where NO = '"+NO+"' and nextNO is NULL"
-		  var rowSet as RowSet
-		  Try
-		    rowSet = db.SelectSQL(sql)
-		  Catch error As DatabaseException
-		    return "select FilePath Error: " + error.Message
-		  End Try
-		  if rowSet.RowCount=0 then
-		    return "NG:NO='"+NO+"' のレコードが見つかりません"
-		  end if
-		  var DealDate as string = rowSet.Column("DealDate").StringValue
-		  var DealPartner as string = DecodeSqlString(rowSet.Column("DealPartner").StringValue)
-		  var DealPrice as string = rowSet.Column("DealPrice").StringValue
-		  
-		  var storeFolderName as string = NO+"_"+DealDate+"_"+DealPartner+"_"+DealPrice
-		  var storePath as string = basePath+"\"+period
-		  var storeF as FolderItem = new FolderItem( storePath, FolderItem.PathModes.Native )
-		  if storeF = nil then
-		    return "NG:IsTSAFolder()"+storePath+"' nil error"
-		  end if
-		  if not storeF.Exists then
-		    return "NG:IsTSAFolder()"+storePath+"' が存在しません"
-		  end if
-		  
-		  if storeF.IsFolder then
-		    return "YES"
-		  end if
-		  return "NO"
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub RollBackInsertedFilePathRecord(basePath as string, rollBackDB as SQLiteDatabase, rollbackPeriod as string, rollbackNO as string)
 		  var deleteFilePath as string
 		  Var rowsFound As RowSet

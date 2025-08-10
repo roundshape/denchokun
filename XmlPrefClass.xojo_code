@@ -277,8 +277,6 @@ Inherits XmlDocument
 		      node = ocrNode.AppendChild(ocrOutputNode)
 		      node = root.Insert(ocrNode,beforeNode)
 		    end if
-		    
-		    // TimeStamp node removed
 		  end if
 		  
 		  
@@ -321,7 +319,6 @@ Inherits XmlDocument
 		  end if
 		  
 		  var ret as integer = 0
-		  //var oldxml as XmlPrefClass
 		  var fp as TextOutputStream
 		  var root as XmlNode
 		  var node as XmlNode
@@ -359,7 +356,6 @@ Inherits XmlDocument
 		    end if
 		  end if
 		  
-		  // タイムスタンプ機能は無効化
 		  
 		  return 0
 		  
@@ -379,7 +375,6 @@ Inherits XmlDocument
 		      pref.Delete
 		    end if
 		    fp = pref.CreateTextFile()
-		    //content = replaceAll( me.ToString, "><", ">"+App.kCRLF+"<" )
 		    content = me.Transform(me.kPrettyPrintXS)
 		    
 		    fp.write content
