@@ -699,7 +699,7 @@ End
 		        updateData.Value("fromDate") = periodData.FromDate
 		        updateData.Value("toDate") = periodData.ToDate
 		        
-		        var result as Dictionary = apiClient.UpdatePeriod(periodData.Name, updateData)
+		        var result as Dictionary = apiClient.UpdatePeriodDates(periodData.Name, periodData.FromDate, periodData.ToDate)
 		        if result.HasKey("success") and result.Value("success").BooleanValue then
 		          successCount = successCount + 1
 		        else
@@ -812,36 +812,62 @@ End
 		    return
 		  end if
 		  
-		  var selectedPeriod as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  var originalName as String = selectedPeriod.Name
+		  // 安全なキャスト処理
+		  var rowTag as Variant = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
+		  if not (rowTag isa DealPeriodClass) then
+		    MessageBox "期間データの取得に失敗しました"
+		    return
+		  end if
 		  
-		  // API経由で期間を更新
+		  var selectedPeriod as DealPeriodClass = DealPeriodClass(rowTag)
+		  var oldName as String = selectedPeriod.Name          // ← ここで定義
+		  var newName as String = self.NameField.Text          // ← ここで定義
+		  
+		  // 名前が変更されていない場合は何もしない
+		  if oldName = newName then
+		    return
+		  end if
+		  
+		  // API経由で期間名を変更
 		  var apiClient as new APIClientClass
 		  apiClient.BaseURL = App.GetAPIServerURL()
 		  
-		  var updateData as new Dictionary
-		  updateData.Value("name") = self.NameField.Text
-		  updateData.Value("fromDate") = if(self.FromDate.Text = "", "未設定", self.FromDate.Text)
-		  updateData.Value("toDate") = if(self.ToDate.Text = "", "未設定", self.ToDate.Text)
+		  var result as Dictionary = apiClient.UpdatePeriodName(oldName, newName)
 		  
-		  try
-		    var result as Dictionary = apiClient.UpdatePeriod(originalName, updateData)
-		    if result.HasKey("success") and result.Value("success").BooleanValue then
-		      // ローカル表示を更新
-		      selectedPeriod.Name = self.NameField.Text
-		      selectedPeriod.FromDate = if(self.FromDate.Text = "", "未設定", self.FromDate.Text)
-		      selectedPeriod.ToDate = if(self.ToDate.Text = "", "未設定", self.ToDate.Text)
-		      
-		      var displayText as String = selectedPeriod.Name + " (" + selectedPeriod.FromDate + " - " + selectedPeriod.ToDate + ")"
-		      self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = displayText
-		      
-		      MessageBox "期間情報を更新しました"
-		    else
-		      MessageBox "期間の更新に失敗しました"
+		  // デバッグ用：resultの内容を確認
+		  var debugMsg as String = "結果確認:" + EndOfLine
+		  
+		  if result.HasKey("success") then
+		    debugMsg = debugMsg + "success: " + result.Value("success").StringValue + EndOfLine
+		  else
+		    debugMsg = debugMsg + "success: キーが存在しません" + EndOfLine
+		  end if
+		  
+		  if result.HasKey("message") then
+		    debugMsg = debugMsg + "message: " + result.Value("message").StringValue + EndOfLine
+		  else
+		    debugMsg = debugMsg + "message: キーが存在しません" + EndOfLine
+		  end if
+		  
+		  if result.HasKey("httpStatusCode") then
+		    debugMsg = debugMsg + "httpStatusCode: " + result.Value("httpStatusCode").StringValue + EndOfLine
+		  else
+		    debugMsg = debugMsg + "httpStatusCode: キーが存在しません" + EndOfLine
+		  end if
+		  
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    // 成功処理
+		    selectedPeriod.Name = newName
+		    var displayText as String = selectedPeriod.Name + " (" + selectedPeriod.FromDate + " - " + selectedPeriod.ToDate + ")"
+		    self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = displayText
+		  else
+		    // エラー処理
+		    var errorMsg as String = "期間名の変更に失敗しました"
+		    if result.HasKey("message") then
+		      errorMsg = errorMsg + EndOfLine + result.Value("message").StringValue
 		    end if
-		  catch error as RuntimeException
-		    MessageBox "サーバー接続エラー: " + error.Message
-		  end try
+		    MessageBox errorMsg
+		  end if
 		End Sub
 	#tag EndEvent
 #tag EndEvents

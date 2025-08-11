@@ -409,6 +409,27 @@ Protected Class APIClientClass
 		End Function
 	#tag EndMethod
 
+	#tag Method, Flags = &h0
+		Function UpdatePeriodName(oldName As String, newName As String) As Dictionary
+		  // PUT /api/v1/periods/{oldName} - 期間名のみ変更
+		  var periodData as new Dictionary
+		  periodData.Value("newName") = newName
+		  
+		  var endpoint as String = "/api/v1/periods/" + oldName
+		  return me.SendRequest("PUT", endpoint, periodData)
+		  End Function
+		  
+		  Function UpdatePeriodDates(periodName As String, fromDate As String, toDate As String) As Dictionary
+		    // PUT /api/v1/periods/{periodName} - 日付のみ更新
+		    var periodData as new Dictionary
+		    periodData.Value("fromDate") = fromDate
+		    periodData.Value("toDate") = toDate
+		    
+		    var endpoint as String = "/api/v1/periods/" + periodName
+		    return me.SendRequest("PUT", endpoint, periodData)
+		End Function
+	#tag EndMethod
+
 
 	#tag Property, Flags = &h0
 		BaseURL As String = "http://localhost:8080"
