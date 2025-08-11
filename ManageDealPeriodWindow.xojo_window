@@ -851,10 +851,10 @@ End
 		  if self.DealPeriodList.SelectedRowCount = 0 then
 		    return
 		  end if
-		  var aItem as FolderItemClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  aItem.DealPeriod.FromDate = "未設定"
+		  var selectedPeriod as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
+		  selectedPeriod.FromDate = "未設定"
 		  self.FromDate.Text = "未設定"
-		  var v as string = aItem.DealPeriod.Name+" ("+aItem.DealPeriod.FromDate+" - "+aItem.DealPeriod.ToDate+")"
+		  var v as string = selectedPeriod.Name+" ("+selectedPeriod.FromDate+" - "+selectedPeriod.ToDate+")"
 		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex,1) = v
 		End Sub
 	#tag EndEvent
@@ -865,10 +865,10 @@ End
 		  if self.DealPeriodList.SelectedRowCount = 0 then
 		    return
 		  end if
-		  var aItem as FolderItemClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  aItem.DealPeriod.ToDate = "未設定"
+		  var selectedPeriod as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
+		  selectedPeriod.ToDate = "未設定"
 		  self.ToDate.Text = "未設定"
-		  var v as string = aItem.DealPeriod.Name+" ("+aItem.DealPeriod.FromDate+" - "+aItem.DealPeriod.ToDate+")"
+		  var v as string = selectedPeriod.Name+" ("+selectedPeriod.FromDate+" - "+selectedPeriod.ToDate+")"
 		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex,1) = v
 		End Sub
 	#tag EndEvent
