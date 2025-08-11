@@ -994,10 +994,10 @@ End
 		Function CheckHashValid() As Boolean
 		  var period as string = self.DealPeriodWin.DealPeriod
 		  
-		  var db as SQLiteDatabase = nil
+		  var apiClient as APICLientClass = nil
 		  
-		  db = App.ConnectDB(period)
-		  if db = nil then
+		  apiClient = App.ConnectAPI(period)
+		  if apiClient = nil then
 		    self.StatusLabel.Text = App.FunctionError
 		    Return true
 		  end if
@@ -1005,28 +1005,28 @@ End
 		  var sql as string = "select FilePath, Hash from Deals where NO='"+self.DealNO+"'"
 		  var row as RowSet
 		  try
-		    row = db.SelectSQL(sql)
+		    row = apiClient.SelectSQL(sql)
 		  Catch e as SQLiteException
-		    db.Close
+		    apiClient.Close
 		    self.StatusLabel.Text = e.Message
 		    Return True
 		  end try
 		  var fileName as string = DecodeSqlString(row.Column("FilePath").StringValue)
 		  var file as new FolderItem(self.DealPeriodWin.BaseFolderPath+period+"\"+fileName)
 		  if file = nil then
-		    db.Close
+		    apiClient.Close
 		    self.StatusLabel.Text = self.DealPeriodWin.BaseFolderPath+period+"\"+fileName+" is nil"
 		    return True
 		  end if
 		  if not file.Exists then
-		    db.Close
+		    apiClient.Close
 		    self.StatusLabel.Text = self.DealPeriodWin.BaseFolderPath+period+"\"+fileName+" not exists"
 		    return True
 		  end if
 		  
 		  var hash as string = row.Column("Hash").StringValue
-		  if db <> nil then
-		    db.Close
+		  if apiClient <> nil then
+		    apiClient.Close
 		  end if
 		  
 		  
@@ -1073,22 +1073,22 @@ End
 		  var oldDealName as string = self.DealPeriodWin.RecordList.CellTextAt(self.DealPeriodWin.RecordList.SelectedRowIndex,4)
 		  var sql as string = "select DealRemark, FilePath from Deals where NO = '"+NO+"'"
 		  
-		  var db as SQLiteDatabase = App.ConnectDB(oldDealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(oldDealPeriod)
+		  if apiClient = nil then
 		    MessageBox "failed to connect DB Error"
 		    return "NG"
 		  end if
 		  
 		  var rowSet as RowSet
 		  Try
-		    rowSet = db.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql)
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox "select DealRemark Error: " + error.Message
 		    return "NG"
 		  End Try
 		  if rowSet.RowCount = 0 then
-		    db.Close
+		    apiClient.Close
 		    MessageBox "select DealRemark Error: No Such Deal NO=" +NO
 		    return "NG"
 		  end if
@@ -1096,7 +1096,7 @@ End
 		  var oldFilePath as string = self.BaseFolderPath.Text+oldDealPeriod+"\"+_
 		  DecodeSqlString(rowSet.Column("FilePath").StringValue)
 		  //var oldHash as string = rowSet.Column("Hash").StringVal)ue
-		  db.Close
+		  apiClient.Close
 		  
 		  if self.DealingDate.Text <> oldDealDate then
 		    ret = "DealDate"
@@ -1165,30 +1165,30 @@ End
 		  var oldDealName as string = self.DealPeriodWin.RecordList.CellTextAt(self.DealPeriodWin.RecordList.SelectedRowIndex,4)
 		  var sql as string = "select DealRemark, FilePath from Deals where NO = '"+NO+"'"
 		  
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(oldDealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(oldDealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return false
 		  end if
 		  
 		  var rowSet as RowSet
 		  Try
-		    rowSet = db.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql)
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox "select DealRemark Error: " + error.Message
 		    return false
 		  End Try
 		  if rowSet.RowCount = 0 then
-		    db.Close
+		    apiClient.Close
 		    MessageBox "select DealRemark Error: No Such Deal NO=" +NO
 		    return false
 		  end if
 		  var oldDealRemark as string = DecodeSqlString(rowSet.Column("DealRemark").StringValue)
 		  var oldFilePath as string = self.BaseFolderPath.Text+oldDealPeriod+"\"+_
 		  DecodeSqlString(rowSet.Column("FilePath").StringValue)
-		  db.Close
+		  apiClient.Close
 		  
 		  if self.DealingDate.Text <> oldDealDate then
 		    return true
@@ -1647,29 +1647,29 @@ End
 		  var reason as string = dlg.Reason
 		  DealRemark = App.UpdateRemarkByReason(DealRemark, "更新理由", reason)
 		  
-		  var db as SQLiteDatabase = App.ConnectDB(self.DealPeriod.SelectedRowValue) //could be to Period
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(self.DealPeriod.SelectedRowValue) //could be to Period
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
-		  db.BeginTransaction()
+		  apiClient.BeginTransaction()
 		  
 		  var ret, selectRowWithNO as string
-		  ret = App.UpdateDeal(db, updatedItems, self.BaseFolderPath.Text, oldPeriod, newPeriod, _
+		  ret = App.UpdateDeal(apiClient, updatedItems, self.BaseFolderPath.Text, oldPeriod, newPeriod, _
 		  self.DealNO, DealType, DealDate, DealName, DealPartner, DealRemark, DealPrice.ToInteger, _
 		  dropF)
 		  
 		  
 		  //self.StatusLabel.Text = "更新しました"
 		  if ret.Left(2) <> "OK" then
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    MessageBox ret
 		    return
 		  end if
 		  
-		  db.CommitTransaction()
-		  db.Close()
+		  apiClient.CommitTransaction()
+		  apiClient.Close()
 		  
 		  if newPeriod <> oldPeriod then
 		    selectRowWithNO = ret.NthField(":",2)

@@ -725,7 +725,7 @@ End
 		  self.UpdateBaseFolderNode(App.XmlPref, base)
 		  App.XmlPref.SavePreference()
 		  
-		  App.MainWin.ReCreateDealPeriodPopupMenu(baseF)
+		  App.MainWin.ReCreateDealPeriodPopupMenu()
 		  
 		  self.Close
 		  

@@ -83,8 +83,8 @@ Inherits DesktopApplication
 		  if periodWinNode <> nil then
 		    var startup as string = periodWinNode.GetAttribute("Startup")
 		    if startup = "on" then
-		      if me.MainWin.BaseFolderPath.Text <> "" and me.MainWin.DealPeriodPopupMenu.SelectedRowValue <> "" then
-		        var baseFolderPath as string = me.MainWin.BaseFolderPath.Text
+		      if me.MainWin.ServerURL.Text <> "" and me.MainWin.DealPeriodPopupMenu.SelectedRowValue <> "" then
+		        var baseFolderPath as string = me.MainWin.ServerURL.Text
 		        var dealPeriod as string = me.MainWin.DealPeriodPopupMenu.SelectedRowValue
 		        dim win as new DealPeriodWindow(baseFolderPath, dealPeriod)
 		        //win.SearchAndGetResults("")
@@ -138,10 +138,10 @@ Inherits DesktopApplication
 		  var hash as String = GetSHA256(imageFile)
 		  var sql as String = "select NO from Deals where Hash = '"+hash+"' and nextNO is NULL and RecStatus <> 'DELETE'"
 		  var exists as Boolean = false
-		  var db as SQLiteDatabase = App.ConnectDB(period)
+		  var apiClient as APICLientClass = App.ConnectAPI(period)
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = db.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql)
 		    if rowsFound.RowCount > 0 then
 		      exists = true
 		      For Each row As DatabaseRow In rowsFound
@@ -154,11 +154,11 @@ Inherits DesktopApplication
 		    end if
 		    rowsFound.Close
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    me.FunctionError = "Error: " + error.Message
 		    return false
 		  End Try
-		  db.Close
+		  apiClient.Close
 		  return exists
 		  
 		End Function
@@ -187,46 +187,19 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ConnectDB(DealPeriod as string) As SQLiteDatabase
-		  me.FunctionCalled = "ConnectDB"
+		Function ConnectAPI(DealPeriod as string) As APIClientClass
+		  me.FunctionCalled = "ConnectAPI"
 		  me.FunctionError = ""
-		  var db as new SQLiteDatabase
-		  db.DatabaseFile = me.GetDatabaseFile(DealPeriod)
-		  if db.DatabaseFile = nil then
-		    me.FunctionError = "Can't find："+DealPeriod+"\Denchokun.db"
-		    //MessageBox "Can't find："+DealPeriod+"\Denchokun.db"
+		  
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = me.GetAPIServerURL()  // 新しく追加する設定取得メソッド
+		  
+		  if not apiClient.ConnectToPeriod(DealPeriod) then
+		    me.FunctionError = apiClient.LastError
 		    return nil
 		  end if
-		  if not db.DatabaseFile.exists then
-		    me.FunctionError = "Can't find："+DealPeriod+"\Denchokun.db"
-		    //MessageBox "Can't find："+DealPeriod+"\Denchokun.db"
-		    return nil
-		  end if
-		  // SQLiteの暗号化キー設定は無効化
-		  Try
-		    db.Connect
-		  Catch error As DatabaseException
-		    try
-		      // 暗号化を使用しないため通常接続のみ
-		      db = new SQLiteDatabase
-		      db.DatabaseFile = me.GetDatabaseFile(DealPeriod)
-		      db.Connect
-		    catch error_again as DatabaseException
-		      me.FunctionError = "Database Connect Error: " + error_again.Message
-		      return nil
-		    end try
-		  End Try
 		  
-		  var sql as String = "CREATE INDEX IF NOT EXISTS idx_Hash ON Deals (Hash)"
-		  Try
-		    db.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    db.Close
-		    me.FunctionError = "Create index Error: " + error.Message
-		    return nil
-		  End Try
-		  
-		  return db
+		  return apiClient
 		End Function
 	#tag EndMethod
 
@@ -239,10 +212,10 @@ Inherits DesktopApplication
 		  end if
 		  
 		  
-		  var db as new SQLiteDatabase
-		  db.DatabaseFile = DenchokunDBF
+		  var apiClient as new APICLientClass
+		  apiClient.DatabaseFile = DenchokunDBF
 		  Try
-		    db.CreateDatabase
+		    apiClient.CreateDatabase
 		    // 新規DB作成時の暗号化は無効化
 		    
 		    Var sql As String
@@ -264,18 +237,18 @@ Inherits DesktopApplication
 		    "PRIMARY KEY(""NO"")"+_
 		    ")"
 		    Try
-		      db.ExecuteSQL(sql)
+		      apiClient.ExecuteSQL(sql)
 		    Catch error As DatabaseException
-		      db.Close
+		      apiClient.Close
 		      return "Create Deals tale Error: " + error.Message
 		    End Try
 		    
 		    
 		    sql = "CREATE INDEX IF NOT EXISTS idx_Hash ON Deals (Hash)"
 		    Try
-		      db.ExecuteSQL(sql)
+		      apiClient.ExecuteSQL(sql)
 		    Catch error As DatabaseException
-		      db.Close
+		      apiClient.Close
 		      return "Create index Error: " + error.Message
 		    End Try
 		    
@@ -285,18 +258,18 @@ Inherits DesktopApplication
 		    """SQLiteLibraryVersion""    TEXT"+_
 		    ")"
 		    Try
-		      db.ExecuteSQL(sql)
+		      apiClient.ExecuteSQL(sql)
 		    Catch error As DatabaseException
-		      db.Close
+		      apiClient.Close
 		      return "Create System table Error: " + error.Message
 		    End Try
 		    sql = "Insert into System values('"+App.Version+"',"+_
-		    "'"+db.LibraryVersion+"'"+_
+		    "'"+apiClient.LibraryVersion+"'"+_
 		    ")"
 		    Try
-		      db.ExecuteSQL(sql)
+		      apiClient.ExecuteSQL(sql)
 		    Catch error As DatabaseException
-		      db.Close
+		      apiClient.Close
 		      return "Insert into System Error: " + error.Message
 		    End Try
 		    
@@ -304,21 +277,21 @@ Inherits DesktopApplication
 		    // handle error here
 		    return "CreateDatabase Error: " + error.Message
 		  End Try
-		  db.Close
+		  apiClient.Close
 		  Return "OK"
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function CreateInMDB() As SQLiteDatabase
+		Function CreateInMDB() As APICLientClass
 		  var dbNode as XmlNode = App.XmlPref.GetNode("InMDB")
 		  if dbNode = nil then
 		    return nil
 		  end if
 		  
-		  var db as New SQLiteDatabase
+		  var apiClient as New APICLientClass
 		  try
-		    db.Connect
+		    apiClient.Connect
 		  Catch e as DatabaseException
 		    return nil
 		  end try
@@ -328,14 +301,14 @@ Inherits DesktopApplication
 		    DealPartnersNode = DealPartnersNode.NextSibling
 		  wend
 		  if DealPartnersNode = nil then
-		    db.Close
+		    apiClient.Close
 		    return nil
 		  end if
 		  
 		  try
-		    db.ExecuteSQL("CREATE TABLE DealPartners(name TEXT PRIMARY KEY)")
+		    apiClient.ExecuteSQL("CREATE TABLE DealPartners(name TEXT PRIMARY KEY)")
 		  Catch e as DatabaseException
-		    db.Close
+		    apiClient.Close
 		    return nil
 		  end try
 		  
@@ -347,7 +320,7 @@ Inherits DesktopApplication
 		        try
 		          Var name As string = PartnerNode.FirstChild.Value
 		          var sql as string = "insert into DealPartners(name) values('"+EncodeSqlString(name)+"')"
-		          db.ExecuteSQL(sql)
+		          apiClient.ExecuteSQL(sql)
 		        Catch e as DatabaseException
 		          me.InMDB.Close
 		          return nil
@@ -357,7 +330,7 @@ Inherits DesktopApplication
 		    wend
 		  end if
 		  
-		  return db
+		  return apiClient
 		End Function
 	#tag EndMethod
 
@@ -604,31 +577,31 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function DeleteDeal(basePath as string, deletePeriod as string, deleteNO as string, deleteReason as string, rollbackDB as SQliteDatabase, rollbackPeriod as string, rollbackNO as string) As string
-		  var db as SQLiteDatabase = App.ConnectDB(deletePeriod)
-		  if db = nil then
+		Function DeleteDeal(basePath as string, deletePeriod as string, deleteNO as string, deleteReason as string, rollbackDB as APICLientClass, rollbackPeriod as string, rollbackNO as string) As string
+		  var apiClient as APICLientClass = App.ConnectAPI(deletePeriod)
+		  if apiClient = nil then
 		    if rollbackPeriod <> "" and rollbackNO <> "" then
 		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		    end if
 		    return App.FunctionError
 		  end if
-		  db.BeginTransaction()
+		  apiClient.BeginTransaction()
 		  
 		  var sql as string = "select DealRemark, FilePath from Deals where NO = '"+deleteNO+"' and nextNO is NULL"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = db.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql)
 		  Catch error As DatabaseException
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    if rollbackDB <> nil then
 		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		    end if
 		    return "select FilePath Error: " + error.Message
 		  End Try
 		  if rowSet.RowCount=0 then
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    if rollbackDB <> nil then
 		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		    end if
@@ -647,8 +620,8 @@ Inherits DesktopApplication
 		  dic.Value("DealPrice").StringValue
 		  var dropF as new FolderItem(basePath+deletePeriod+"\"+tsFolderName, FolderItem.PathModes.Native)
 		  if dropF = nil then
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    if rollbackDB <> nil then
 		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		    end if
@@ -668,10 +641,10 @@ Inherits DesktopApplication
 		  sql = "update Deals set RecStatus='DELETE', DealRemark='"+EncodeSqlString(DealRemark)+_
 		  "', FilePath='"+newFilePath+"', RecUpdate='"+d.SQLDateTime+"' where NO='"+deleteNO+"'"
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    if rollbackDB <> nil then
 		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		    end if
@@ -684,8 +657,8 @@ Inherits DesktopApplication
 		    DocPath = basePath+deletePeriod+"\"+tsFolderName
 		    DocF = new FolderItem(DocPath, FolderItem.PathModes.Native)
 		    if not DocF.Exists then
-		      db.RollbackTransaction()
-		      db.Close()
+		      apiClient.RollbackTransaction()
+		      apiClient.Close()
 		      if rollbackDB <> nil then
 		        App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		      end if
@@ -696,8 +669,8 @@ Inherits DesktopApplication
 		    DocPath = basePath+deletePeriod+"\"+FilePath
 		    DocF = new FolderItem(DocPath, FolderItem.PathModes.Native)
 		    if not DocF.Exists then
-		      db.RollbackTransaction()
-		      db.Close()
+		      apiClient.RollbackTransaction()
+		      apiClient.Close()
 		      if rollBackDB <> nil then
 		        App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
 		      end if
@@ -708,8 +681,8 @@ Inherits DesktopApplication
 		  
 		  DocF.Visible = false
 		  
-		  db.CommitTransaction()
-		  db.Close()
+		  apiClient.CommitTransaction()
+		  apiClient.Close()
 		  
 		  return "OK"
 		End Function
@@ -745,6 +718,16 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function GetAPIServerURL() As string
+		  var apiServerURL as String = me.XmlPref.GetAPIServerURL()
+		  if apiServerURL = "" then
+		    return "http://localhost:8080"  // デフォルト値
+		  end if
+		  return apiServerURL
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function GetBaseFolderPath() As String
 		  var baseNode as XmlNode = App.XmlPref.GetNode("BaseFolder")
 		  var basePath as string = baseNode.GetAttribute("path")
@@ -765,8 +748,8 @@ Inherits DesktopApplication
 
 	#tag Method, Flags = &h0
 		Function GetDealDatePartnerPrice(period as string, NO as string) As Dictionary
-		  var db as SQLiteDatabase = App.ConnectDB(period )
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(period )
+		  if apiClient = nil then
 		    MessageBox "failed to connect DB Error"
 		    return nil
 		  end if
@@ -774,21 +757,21 @@ Inherits DesktopApplication
 		  var sql as string = "select DealDate, DealPartner, DealPrice from Deals where NO = '"+NO+"'"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = db.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql)
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox "GetDealDatePartnerPrice Error: " + error.Message
 		    return nil
 		  End Try
 		  if rowSet.RowCount = 0 then
-		    db.Close
+		    apiClient.Close
 		    MessageBox "GetDealDatePartnerPrice Error: No Such Deal NO=" +NO
 		    return nil
 		  end if
 		  var DealDate as string = rowSet.Column("DealDate").StringValue
 		  var DealPartner as string = DecodeSqlString(rowSet.Column("DealPartner").StringValue)
 		  var DealPrice as string = rowSet.Column("DealPrice").StringValue
-		  db.Close
+		  apiClient.Close
 		  Var d As New Dictionary("DealDate" : DealDate, "DealPartner" : DealPartner, "DealPrice" : DealPrice)
 		  return d
 		End Function
@@ -809,8 +792,8 @@ Inherits DesktopApplication
 
 	#tag Method, Flags = &h0
 		Function GetRegDateAndHash(period as string, NO as string) As Dictionary
-		  var db as SQLiteDatabase = App.ConnectDB(period )
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(period )
+		  if apiClient = nil then
 		    MessageBox "failed to connect DB Error"
 		    return nil
 		  end if
@@ -818,20 +801,20 @@ Inherits DesktopApplication
 		  var sql as string = "select RegDate, Hash from Deals where NO = '"+NO+"'"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = db.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql)
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox "GetRegDateAndHash Error: " + error.Message
 		    return nil
 		  End Try
 		  if rowSet.RowCount = 0 then
-		    db.Close
+		    apiClient.Close
 		    MessageBox "GetRegDateAndHash Error: No Such Deal NO=" +NO
 		    return nil
 		  end if
 		  var RegDate as string = rowSet.Column("RegDate").StringValue
 		  var Hash as string = rowSet.Column("Hash").StringValue
-		  db.Close
+		  apiClient.Close
 		  Var d As New Dictionary("RegDate" : RegDate, "Hash" : Hash)
 		  return d
 		End Function
@@ -849,7 +832,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InsertDeal(db as SQLiteDataBase, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, regDate as string, update as Boolean) As string
+		Function InsertDeal(db as APICLientClass, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, regDate as string, update as Boolean) As string
 		  
 		  var isTS as Boolean = false
 		  var newNO as string = App.CreateNewNO("")
@@ -872,11 +855,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InsertDealForFileUnderTSAOff(db as SQLiteDatabase, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
-		  //if isTS then
-		  //return "NG:タイムスタンプ付ファイルをタイムスタンプOFFで登録しようとしています"
-		  //end if
-		  
+		Function InsertDealForFileUnderTSAOff(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
 		  var storeFolderName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString
 		  var regFilePath as string
 		  if isTS then
@@ -934,7 +913,7 @@ Inherits DesktopApplication
 		    ");"
 		  end if
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    return "NG:insert into Deals Error: " + error.Message
 		  End Try
@@ -976,7 +955,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InsertDealForFileUnderTSAOn(db as SQLiteDatabase, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
+		Function InsertDealForFileUnderTSAOn(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
 		  // sotreFolderName is only for tsaEnable=true
 		  var storeFolderName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString //in case dropF has extension
 		  
@@ -1029,7 +1008,7 @@ Inherits DesktopApplication
 		  end if
 		  
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    return "NG:insert into Deals Error: " + error.Message
 		  End Try
@@ -1078,7 +1057,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InsertDealForFolderUnderTSAoff(db as SQLiteDatabase, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
+		Function InsertDealForFolderUnderTSAoff(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
 		  //if drop is Folder, means dropF is always newly dropped
 		  var zipName as string = dropF.Name+".zip"
 		  var zipF as FolderItem = SpecialFolder.Temporary.Child(zipName)
@@ -1136,7 +1115,7 @@ Inherits DesktopApplication
 		  end if
 		  
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    zipF.Remove // Since zipF is in Temporary
 		    return "NG:insert into Deals Error: " + error.Message
@@ -1157,7 +1136,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InsertDealForFolderUnderTSAon(db as SQLiteDatabase, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
+		Function InsertDealForFolderUnderTSAon(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
 		  // sotreFolderName is only for tsaEnable=true
 		  var storeFolderName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString //in case dropF has extension
 		  
@@ -1219,7 +1198,7 @@ Inherits DesktopApplication
 		  end if
 		  
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    zipF.Remove  // zipF is in Temporary
 		    return "NG:insert into Deals Error: " + error.Message
@@ -1250,11 +1229,11 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RollBackInsertedFilePathRecord(basePath as string, rollBackDB as SQLiteDatabase, rollbackPeriod as string, rollbackNO as string)
+		Sub RollBackInsertedFilePathRecord(basePath as string, rollBackApiClient as APICLientClass, rollbackPeriod as string, rollbackNO as string)
 		  var deleteFilePath as string
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = rollBackDB.SelectSQL("SELECT FilePath FROM Deals WHERE NO='"+rollbackNO+"'")
+		    rowsFound = rollBackApiClient.SelectSQL("SELECT FilePath FROM Deals WHERE NO='"+rollbackNO+"'")
 		    if rowsFound.RowCount = 0 then
 		      MessageBox "RollBackInsertFilePathRecord(): can't find a record NO='"+rollbackNO+"'"
 		      return
@@ -1268,7 +1247,7 @@ Inherits DesktopApplication
 		  
 		  var sql as string = "delete from Deals where NO = '"+rollbackNO+"'"
 		  Try
-		    rollBackDB.ExecuteSQL(sql)
+		    rollBackApiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    MessageBox("RollBackInsertFilePathRecord(): " + error.Message)
 		    return
@@ -1331,7 +1310,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDeal(db as SQliteDatabase, updatedItems as string, basePath as string, oldPeriod as string, newPeriod as string, dealNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, dealPrice as integer, dropF as folderitem) As string
+		Function UpdateDeal(db as APICLientClass, updatedItems as string, basePath as string, oldPeriod as string, newPeriod as string, dealNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, dealPrice as integer, dropF as folderitem) As string
 		  var isTS as Boolean = false
 		  var dic as Dictionary = App.GetRegDateAndHash(oldPeriod, dealNO)
 		  var oldHash as string = dic.Value("Hash").StringValue
@@ -1379,7 +1358,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDealinDifferentPeriod(db as SQLiteDatabase, basePath as string, oldPeriod as string, newPeriod as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
+		Function UpdateDealinDifferentPeriod(db as APICLientClass, basePath as string, oldPeriod as string, newPeriod as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
 		  var ret as string
 		  ret = App.InsertDeal(db, basePath, newPeriod, dealType, dealDate, dealName, dealPartner, dealRemark, price, _
 		  dropF, hash, regDate, false) //Since insert to newPeriod, this must not be update
@@ -1402,7 +1381,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDealinSamePeriod(db as SQLiteDatabase, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as String) As string
+		Function UpdateDealinSamePeriod(db as APICLientClass, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as String) As string
 		  var newNO as string = App.CreateNewNO(oldNO) // add or incr '-00'
 		  
 		  var ret as string
@@ -1422,10 +1401,10 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDealinSamePeriodForFile(db as SQLiteDatabase, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
+		Function UpdateDealinSamePeriodForFile(apiClient as APICLientClass, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
 		  var ret, sql as string
 		  // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
-		  ret = App.InsertDealForFileUnderTSAOff(db, newNO, basePath, period, dealType, dealDate, dealName, _
+		  ret = App.InsertDealForFileUnderTSAOff(apiClient, newNO, basePath, period, dealType, dealDate, dealName, _
 		  dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
 		  if ret <> "OK" then
 		    return ret
@@ -1434,7 +1413,7 @@ Inherits DesktopApplication
 		  sql = "update Deals set nextNO='"+newNO+"' "+_
 		  "where NO='"+oldNO+"'"
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    return "update Deals Error: " + error.Message
 		  End Try
@@ -1442,7 +1421,7 @@ Inherits DesktopApplication
 		  sql = "update Deals set prevNO='"+oldNO+"' "+_
 		  "where NO='"+newNO+"'"
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    return "update Deals Error: " + error.Message
 		  End Try
@@ -1452,10 +1431,10 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDealinSamePeriodForFolder(db as SQLiteDatabase, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
+		Function UpdateDealinSamePeriodForFolder(apiClient as APICLientClass, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
 		  var ret, sql as string
 		  // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
-		  ret = App.InsertDealForFolderUnderTSAOff(db, newNO, basePath, period, dealType, dealDate, dealName, _
+		  ret = App.InsertDealForFolderUnderTSAOff(apiClient , newNO, basePath, period, dealType, dealDate, dealName, _
 		  dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
 		  if ret <> "OK:" then
 		    return ret
@@ -1465,7 +1444,7 @@ Inherits DesktopApplication
 		  sql = "update Deals set nextNO='"+newNO+"' "+_
 		  "where NO='"+oldNO+"'"
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    return "update Deals Error: " + error.Message
 		  End Try
@@ -1473,7 +1452,7 @@ Inherits DesktopApplication
 		  sql = "update Deals set prevNO='"+oldNO+"' "+_
 		  "where NO='"+newNO+"'"
 		  Try
-		    db.ExecuteSQL(sql)
+		    apiClient.ExecuteSQL(sql)
 		  Catch error As DatabaseException
 		    return "update Deals Error: " + error.Message
 		  End Try
@@ -1519,7 +1498,7 @@ Inherits DesktopApplication
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		InMDB As SQLiteDatabase
+		InMDB As APICLientClass
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

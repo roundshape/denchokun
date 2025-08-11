@@ -48,6 +48,7 @@ Class=ZipCompressClass;ZipCompressClass.xojo_code;&h00000000475467FF;&h000000000
 FileTypeSet=PfxFileType;PfxFileType.xojo_filetypeset;&h000000007D6BCFFF;&h0000000000000000;false
 DesktopWindow=SetupWindow;SetupWindow.xojo_window;&h000000001FBBEFFF;&h0000000000000000;false
 DesktopWindow=MBSLicenseWindow;MBSLicenseWindow.xojo_window;&h000000002092CFFF;&h0000000000000000;false
+Class=APIClientClass;APIClientClass.xojo_code;&h000000007B5777FF;&h0000000000000000;false
 MajorVersion=2
 MinorVersion=0
 SubVersion=0

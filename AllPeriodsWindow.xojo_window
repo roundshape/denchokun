@@ -692,7 +692,7 @@ End
 		  
 		  var totalCount as integer = self.RecordList.RowCount
 		  
-		  var db as SQLiteDatabase = nil
+		  var apiClient as APICLientClass = nil
 		  var rowTag as RecordListRowPropertiesClass
 		  var prevPeriod as string = ""
 		  var period as string
@@ -701,11 +701,11 @@ End
 		    rowTag = self.RecordList.RowTagAt(i)
 		    period = rowTag.DealPeriod
 		    if period <> prevPeriod then
-		      if db <> nil then
-		        db.Close
+		      if apiClient <> nil then
+		        apiClient.Close
 		      end if
-		      db = App.ConnectDB(period)
-		      if db = nil then
+		      apiClient = App.ConnectAPI(period)
+		      if apiClient = nil then
 		        self.StatusLabel.Text = App.FunctionError
 		        Return True
 		      end if
@@ -714,7 +714,7 @@ End
 		    var sql as string = "select FilePath, Hash from Deals where NO='"+rowTag.NO+"'"
 		    var row as RowSet
 		    try
-		      row = db.SelectSQL(sql)
+		      row = apiClient.SelectSQL(sql)
 		    Catch e as SQLiteException
 		      self.StatusLabel.Text = e.Message
 		      Return True
@@ -753,8 +753,8 @@ End
 		      exit
 		    end if
 		  next
-		  if db <> nil then
-		    db.Close
+		  if apiClient <> nil then
+		    apiClient.Close
 		  end if
 		  self.StatusLabel.Text = ""
 		  self.StatusLabel.Refresh(true)
@@ -862,8 +862,8 @@ End
 		    
 		    var rowTag as RecordListRowPropertiesClass = self.RecordList.RowTagAt(i)
 		    
-		    var db as SQLiteDatabase = App.ConnectDB(rowTag.DealPeriod)
-		    if db = nil then
+		    var apiClient as APICLientClass = App.ConnectAPI(rowTag.DealPeriod)
+		    if apiClient = nil then
 		      self.RunningWheel.Visible = false
 		      output.Close
 		      WriteExportErrorFile(errfile, "Database("+rowTag.DealPeriod+") connection error")
@@ -874,10 +874,10 @@ End
 		    var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		    var aRec as RowSet
 		    try
-		      aRec = db.SelectSQL(sql)
+		      aRec = apiClient.SelectSQL(sql)
 		    Catch err as SQLiteException
 		      self.RunningWheel.Visible = false
-		      db.Close
+		      apiClient.Close
 		      output.Close
 		      WriteExportErrorFile(errfile, err.Message)
 		      MessageBox err.Message
@@ -912,7 +912,7 @@ End
 		      output.WriteLine(outString)
 		    catch e as IOException
 		      self.RunningWheel.Visible = false
-		      db.Close
+		      apiClient.Close
 		      output.Close
 		      WriteExportErrorFile(errfile, e.Message)
 		      MessageBox e.Message
@@ -936,14 +936,14 @@ End
 		    catch e as IOException
 		      self.StatusLabel.Text = ""
 		      self.RunningWheel.Visible = false
-		      db.Close
+		      apiClient.Close
 		      output.Close
 		      WriteExportErrorFile(errfile, e.Message+":copy "+frF.NativePath+" to "+toF.NativePath)
 		      MessageBox e.Message
 		      //return true
 		    end try
 		    
-		    db.Close
+		    apiClient.Close
 		    App.DoEvents(10)
 		  next
 		  output.Close
@@ -1009,7 +1009,7 @@ End
 		  self.StatusLabel.Refresh(true)
 		  self.RunningWheel.Refresh(true)
 		  
-		  var db as SQLiteDatabase
+		  var db as APICLientClass
 		  var ret as string = "OK"
 		  for Each aItem as FolderItem in baseF.Children(false)
 		    if not aItem.Visible or left(aItem.Name,1)="." or aItem.IsAlias or not aItem.IsFolder then
@@ -1037,11 +1037,11 @@ End
 
 	#tag Method, Flags = &h0
 		Function SearchDBhistory(baseF as FolderItem, periodF as FolderItem, dbF as FolderItem) As string
-		  var db as SQLiteDatabase = App.ConnectDB(periodF.Name)
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(periodF.Name)
+		  if apiClient = nil then
 		    return App.FunctionError
 		  end if
-		  db.ThreadYieldInterval = 200 //Does this work?
+		  apiClient.ThreadYieldInterval = 200 //Does this work?
 		  
 		  // Now db
 		  // connected, then go!
@@ -1078,7 +1078,7 @@ End
 		  end if
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = db.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql)
 		    For Each row As DatabaseRow In rowsFound
 		      var NO as string = row.Column("NO").StringValue
 		      var prevNO as string = row.Column("prevNO").StringValue
@@ -1108,23 +1108,23 @@ End
 		    Next
 		    rowsFound.Close
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    return "Error: " + error.Message
 		  End Try
-		  db.Close
+		  apiClient.Close
 		  return "OK"
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function SearchDBnormal(baseF as FolderItem, periodF as FolderItem, dbF as FolderItem) As string
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(periodF.Name)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(periodF.Name)
+		  if apiClient = nil then
 		    return App.FunctionError
 		  end if
 		  
-		  db.ThreadYieldInterval = 200 //Does this work?
+		  apiClient.ThreadYieldInterval = 200 //Does this work?
 		  
 		  // Now db
 		  // connected, then go!
@@ -1163,7 +1163,7 @@ End
 		  
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = db.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql)
 		    For Each row As DatabaseRow In rowsFound
 		      var NO as string = row.Column("NO").StringValue
 		      var DealType as string = DecodeSqlString(row.Column("DealType").StringValue)
@@ -1190,10 +1190,10 @@ End
 		    Next
 		    rowsFound.Close
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    return "Error: " + error.Message
 		  End Try
-		  db.Close
+		  apiClient.Close
 		  return "OK"
 		End Function
 	#tag EndMethod
@@ -1270,10 +1270,10 @@ End
 		  
 		  var dbF as FolderItem = new FolderItem(self.BaseFolderPath+aRowTag.DealPeriod+"\Denchokun.db", FolderItem.PathModes.Native)
 		  
-		  //var db as SQLiteDatabase = self.ConnectDB(dbF)
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(aRowTag.DealPeriod)
-		  if db = nil then
+		  //var db as APICLientClass = self.ConnectDB(dbF)
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(aRowTag.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
@@ -1282,7 +1282,7 @@ End
 		  "NO like '"+rowNO.NthField("-",1)+"%'"
 		  sql = sql + " order by RecUpdate desc"
 		  Try
-		    var rowsFound as RowSet = db.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
 		    For Each aRec As DatabaseRow In rowsFound
 		      var NO as string = aRec.Column("NO").StringValue
 		      var prevNO as string = aRec.Column("prevNO").StringValue
@@ -1310,11 +1310,11 @@ End
 		      me.RowTagAt(me.LastAddedRowIndex) = aRowTag
 		    next
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  end Try
-		  db.Close
+		  apiClient.Close
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -1348,18 +1348,18 @@ End
 		  var dropF as FolderItem
 		  
 		  //var dbF as new FolderItem( self.BaseFolderPath+"\"+rowTag.DealPeriod+"\Denchokun.db", FolderItem.PathModes.Native)
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(rowTag.DealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(rowTag.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
 		  
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = db.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
 		    if rowsFound.RowCount() = 0 then //should be one
-		      db.Close
+		      apiClient.Close
 		      MessageBox("Error: can't find a record")
 		      return
 		    end if
@@ -1380,11 +1380,11 @@ End
 		    DecodeSqlString(rowsFound.Column("FilePath").StringValue), FolderItem.PathModes.Native)
 		    
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  end Try
-		  db.Close
+		  apiClient.Close
 		  
 		  var win as new DetailWindow
 		  if self.HistoryCheck.Value then

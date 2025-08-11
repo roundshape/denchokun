@@ -2,6 +2,17 @@
 Protected Class XmlPrefClass
 Inherits XmlDocument
 	#tag Method, Flags = &h0
+		Function GetAPIServerURL() As String
+		  var apiNode as XmlNode = me.GetNode("APIServer")
+		  if apiNode = nil then
+		    // デフォルト値
+		    return "http://localhost:8080"
+		  end if
+		  return apiNode.GetAttribute("url")
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function GetBoolAtrribute(nodename as string, attrname as string) As Boolean
 		  var child as XmlNode
 		  var childname as string
@@ -380,6 +391,20 @@ Inherits XmlDocument
 		    fp.write content
 		    fp.close
 		  end if
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub SetAPIServerURL(url as String)
+		  var root as XmlNode = me.FirstChild
+		  var apiNode as XmlNode = me.GetNode("APIServer")
+		  
+		  if apiNode = nil then
+		    var elem as XmlElement = me.CreateElement("APIServer")
+		    apiNode = root.AppendChild(elem)
+		  end if
+		  
+		  apiNode.SetAttribute("url", url)
 		End Sub
 	#tag EndMethod
 

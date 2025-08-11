@@ -708,7 +708,6 @@ End
 		    Var dt As New DateTime(y, m, d)
 		    self.ToDateTimePicker.SelectedDate = dt
 		  end if
-		  //db.Close
 		  
 		  self.RecordList.RowSelectionType = DesktopListBox.RowSelectionTypes.Single
 		  self.RecordList.ColumnAlignmentAt(0)=DesktopListBox.Alignments.Center
@@ -822,17 +821,17 @@ End
 		  
 		  self.RecordList.RemoveAllRows
 		  
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(self.DealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
-		  db.ThreadYieldInterval = 200 //Does this work?
+		  apiClient.ThreadYieldInterval = 200 //Does this work?
 		  
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = db.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql)
 		    For Each row As DatabaseRow In rowsFound
 		      var NO as string = row.Column("NO").StringValue
 		      var prevNO as string = row.Column("prevNO").StringValue
@@ -869,11 +868,11 @@ End
 		    Next
 		    rowsFound.Close
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  End Try
-		  db.Close
+		  apiClient.Close
 		  
 		  self.RecordList.Refresh(true)
 		End Sub
@@ -916,17 +915,16 @@ End
 		  self.RecordList.RemoveAllRows
 		  //self.RecordList.Refresh(true)
 		  
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(self.DealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
-		  //db.ThreadYieldInterval = 200 //Does this work?
 		  
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = db.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql)
 		    For Each row As DatabaseRow In rowsFound
 		      var NO as string = row.Column("NO").StringValue
 		      var DealType as string = row.Column("DealType").StringValue
@@ -956,11 +954,11 @@ End
 		    Next
 		    rowsFound.Close
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  End Try
-		  db.Close
+		  apiClient.Close
 		  
 		  self.RecordList.Refresh(true)
 		  
@@ -1027,9 +1025,9 @@ End
 		Sub RowExpanded(row As Integer)
 		  var rowTag as RecordListRowPropertiesClass = me.RowTagAt(row)
 		  var lastNo as string = rowTag.NO
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(self.DealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
@@ -1037,7 +1035,7 @@ End
 		  "NO like '"+lastNo.NthField("-",1)+"%'"
 		  sql = sql + " order by RecUpdate desc"
 		  Try
-		    var rowsFound as RowSet = db.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
 		    For Each aRec As DatabaseRow In rowsFound
 		      var NO as string = aRec.Column("NO").StringValue
 		      var prevNO as string = aRec.Column("prevNO").StringValue
@@ -1066,11 +1064,11 @@ End
 		      me.RowTagAt(me.LastAddedRowIndex) = rowTag
 		    next
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  end Try
-		  db.Close
+		  apiClient.Close
 		End Sub
 	#tag EndEvent
 	#tag Event
@@ -1105,17 +1103,17 @@ End
 		  var FilePath as string
 		  var dropF as FolderItem
 		  
-		  var db as SQLiteDatabase
-		  db = App.ConnectDB(self.DealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass
+		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox(App.FunctionError)
 		    return
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = db.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
 		    if rowsFound.RowCount() = 0 then //should be one
-		      db.Close
+		      apiClient.Close
 		      MessageBox("Error: can't find a record")
 		      return
 		    end if
@@ -1135,11 +1133,11 @@ End
 		    FilePath = DecodeSqlString(rowsFound.Column("FilePath").StringValue)
 		    dropF = new FolderItem(self.BaseFolderPath+self.DealPeriod+"\"+FilePath, FolderItem.PathModes.Native)
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  end Try
-		  db.Close
+		  apiClient.Close
 		  
 		  var selectedRowIndex as integer = me.SelectedRowIndex
 		  var scrollPosition as integer = me.ScrollPosition
@@ -1296,16 +1294,16 @@ End
 		  var FilePath as string
 		  var dropF as FolderItem
 		  
-		  var db as SQLiteDatabase = App.ConnectDB(self.DealPeriod)
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(self.DealPeriod)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = db.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
 		    if rowsFound.RowCount() = 0 then //should be one
-		      db.Close
+		      apiClient.Close
 		      MessageBox("Error: can't find a record")
 		      return
 		    end if
@@ -1326,11 +1324,11 @@ End
 		    dropF = new FolderItem(self.BaseFolderPath+self.DealPeriod+"\"+FilePath, FolderItem.PathModes.Native)
 		    
 		  Catch error As DatabaseException
-		    db.Close
+		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
 		    return
 		  end Try
-		  db.Close
+		  apiClient.Close
 		  
 		  
 		  Var dlg As New DeleteDialog
@@ -1351,8 +1349,8 @@ End
 		  var ret as string
 		  ret = App.DeleteDeal(self.BaseFolderPath, self.DealPeriod, NO, reason, nil, "", "")
 		  if ret <> "OK" then
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    self.StatusLabel.Text = ret
 		    return
 		  end if

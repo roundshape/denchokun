@@ -492,38 +492,7 @@ Begin DesktopWindow MainWindow
       Visible         =   True
       Width           =   71
    End
-   Begin DesktopButton SelectBaseFolder
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Cancel          =   False
-      Caption         =   "選択"
-      Default         =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   17
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MacButtonStyle  =   0
-      Scope           =   0
-      TabIndex        =   16
-      TabPanelIndex   =   0
-      TabStop         =   False
-      Tooltip         =   ""
-      Top             =   38
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   46
-   End
-   Begin DesktopLabel BaseFolderPath
+   Begin DesktopLabel ServerURL
       AllowAutoDeactivate=   True
       Bold            =   False
       Enabled         =   True
@@ -533,7 +502,7 @@ Begin DesktopWindow MainWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   66
+      Left            =   82
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -553,7 +522,7 @@ Begin DesktopWindow MainWindow
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   309
+      Width           =   293
    End
    Begin DesktopPopupMenu DealPeriodPopupMenu
       AllowAutoDeactivate=   True
@@ -1040,6 +1009,38 @@ Begin DesktopWindow MainWindow
       _mName          =   ""
       _mPanelIndex    =   0
    End
+   Begin DesktopLabel Label2
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   20
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   20
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   False
+      TabIndex        =   33
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "ホスト："
+      TextAlignment   =   3
+      TextColor       =   &c000000
+      Tooltip         =   ""
+      Top             =   38
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   60
+   End
 End
 #tag EndDesktopWindow
 
@@ -1104,17 +1105,18 @@ End
 		    self.Height = Height
 		  end if
 		  
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string = base.GetAttribute("path")
-		  var baseF as FolderItem = new FolderItem(basePath, FolderItem.PathModes.Native)
-		  if baseF = nil or not baseF.Exists then
-		    self.MainStatusLabel.Text = "ベースフォルダが存在しません。選択してください"
-		    self.BaseFolderPath.Text = ""
-		    return
-		  end if
-		  self.BaseFolderPath.Text = basePath
+		  // APIサーバーURLを表示
+		  var apiServerURL as String = App.GetAPIServerURL()
+		  self.ServerURL.Text = apiServerURL
 		  
-		  self.ReCreateDealPeriodPopupMenu(baseF)
+		  // APIサーバーへの接続確認（オプション）
+		  if apiServerURL = "" or apiServerURL = "http://localhost:8080" then
+		    self.MainStatusLabel.Text = "APIサーバーを設定してください（設定メニューから）"
+		  else
+		    self.MainStatusLabel.Text = "サーバー: " + apiServerURL
+		  end if
+		  
+		  self.ReCreateDealPeriodPopupMenu()
 		  
 		  self.ReCreateDealTypePopupMenu()
 		  
@@ -1145,7 +1147,7 @@ End
 		  if self.AllPeriodsWin = nil then
 		    self.AllPeriodsWin = new AllPeriodsWindow
 		  end if
-		  self.AllPeriodsWin.BaseFolderPath = self.BaseFolderPath.Text
+		  self.AllPeriodsWin.BaseFolderPath = self.ServerURL.Text
 		  self.AllPeriodsWin.Show
 		  Return True
 		  
@@ -1195,32 +1197,56 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ReCreateDealPeriodPopupMenu(baseF as FolderItem)
+		Sub ReCreateDealPeriodPopupMenu()
 		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var workingPeriod as string =base.GetAttribute("workingPeriod")
+		  var workingPeriod as string = base.GetAttribute("workingPeriod")
 		  
 		  self.DealPeriodPopupMenu.RemoveAllRows
 		  
-		  var folderNames() as string
-		  if baseF = nil or not baseF.Exists or not baseF.IsFolder then
-		    // ベースフォルダが無い/不正なときは何も表示しない
-		    return
-		  end if
-		  For Each aFolder As FolderItem In baseF.Children(false)
-		    if not aFolder.IsFolder or aFolder.IsAlias or not aFolder.Visible or aFolder.name.Left(1) = "." then
-		      Continue
-		    End if
-		    if not aFolder.IsWriteable or aFolder.Child("Denchokun.ReadOnly").Exists then
-		      Continue
-		    End if
-		    folderNames.Add aFolder.Name
-		  next
-		  folderNames.Sort
+		  // APIサーバーから期間一覧を取得
+		  var periodNames() as String
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
+		  
+		  try
+		    var result as Dictionary = apiClient.GetPeriods()
+		    if result <> nil and result.HasKey("success") and result.Value("success").BooleanValue then
+		      if result.HasKey("periods") then
+		        var periodsArray as Variant = result.Value("periods")
+		        if periodsArray.IsArray then
+		          var periodsVariantArray() as Variant = periodsArray
+		          for each periodVariant as Variant in periodsVariantArray
+		            // 新しいAPI仕様：オブジェクト形式の期間データのみ対応
+		            if periodVariant isa Dictionary then
+		              var periodDict as Dictionary = Dictionary(periodVariant)
+		              if periodDict.HasKey("name") then
+		                periodNames.Add(periodDict.Value("name").StringValue)
+		              end if
+		            end if
+		          next
+		        end if
+		      end if
+		    else
+		      // APIエラーまたは接続失敗時は固定リストを使用
+		      self.MainStatusLabel.Text = "APIサーバーから期間取得に失敗しました。固定リストを使用します。"
+		      periodNames.Add("2024-01")
+		      periodNames.Add("2024-02")
+		      periodNames.Add("2024-03")
+		      periodNames.Add("2024-04")
+		    end if
+		  catch error as RuntimeException
+		    // ネットワークエラー等の場合は固定リストを使用
+		    self.MainStatusLabel.Text = "サーバー接続エラー: " + error.Message
+		    periodNames.Add("2024-01")
+		    periodNames.Add("2024-02")
+		    periodNames.Add("2024-03")
+		    periodNames.Add("2024-04")
+		  end try
 		  
 		  var i, workingPeriodIndex as integer
-		  workingPeriodIndex = -1 //no selected
+		  workingPeriodIndex = -1
 		  i = 0
-		  For Each aName As string In folderNames
+		  For Each aName As string In periodNames
 		    self.DealPeriodPopupMenu.AddRow aName
 		    if aName = workingPeriod then
 		      workingPeriodIndex = i
@@ -1229,24 +1255,23 @@ End
 		  Next
 		  
 		  if workingPeriodIndex < 0 then
-		    if App.firstBoot then
-		      self.MainStatusLabel.Text = "ベースフォルダを選択してください"
+		    if periodNames.Count = 0 then
+		      self.MainStatusLabel.Text = "利用可能な期間がありません"
+		      self.DealPeriodPopupMenu.SelectedRowIndex = -1
 		    else
-		      self.MainStatusLabel.Text = "取引期間を設定し、選択してください"
+		      if self.MainStatusLabel.Text = "" then
+		        self.MainStatusLabel.Text = "取引期間を選択してください"
+		      end if
+		      self.DealPeriodPopupMenu.SelectedRowIndex = 0
 		    end if
 		  else
-		    self.MainStatusLabel.Text = ""
-		  end if
-		  if workingPeriodIndex < 0 and folderNames.Count = 0 then //該当のフォルダガ無く&フォルダが何も無い
-		    self.DealPeriodPopupMenu.SelectedRowIndex = workingPeriodIndex
-		  ElseIf workingPeriodIndex < 0 and folderNames.Count > 0 then
-		    self.DealPeriodPopupMenu.SelectedRowIndex = 0
-		  Else //workingPeriodIndex >= 0 and folderNames.count > 0
+		    if self.MainStatusLabel.Text = "" then
+		      self.MainStatusLabel.Text = ""
+		    end if
 		    self.DealPeriodPopupMenu.SelectedRowIndex = workingPeriodIndex
 		  end if
 		  
 		  return
-		  
 		End Sub
 	#tag EndMethod
 
@@ -1322,7 +1347,7 @@ End
 		    return
 		  end if
 		  //Check drop object is in BaseFolder
-		  if left(obj.FolderItem.NativePath, self.BaseFolderPath.Text.Length) = self.BaseFolderPath.Text then
+		  if left(obj.FolderItem.NativePath, self.ServerURL.Text.Length) = self.ServerURL.Text then
 		    return
 		  end if
 		  
@@ -1429,61 +1454,7 @@ End
 		End Sub
 	#tag EndEvent
 #tag EndEvents
-#tag Events SelectBaseFolder
-	#tag Event
-		Sub Pressed()
-		  Var dlg As New SelectFolderDialog
-		  dlg.ActionButtonCaption = "選択"
-		  dlg.Title = "ベースフォルダを選択してください"
-		  //dlg.PromptText = "Prompt Text"
-		  if self.BaseFolderPath.Text <> "" then
-		    var baseF as folderitem
-		    baseF = new FolderItem(self.BaseFolderPath.Text, FolderItem.PathModes.Native)
-		    if baseF <> nil then
-		      dlg.InitialFolder = baseF
-		    end if
-		  end if
-		  
-		  Var f As FolderItem
-		  f = dlg.ShowModal
-		  If f <> Nil Then
-		    if not App.firstBoot then
-		      var warningDlg as new MessageDialog
-		      warningDlg.ActionButton.Caption = "続行"
-		      warningDlg.ActionButton.Default = false
-		      warningDlg.CancelButton.Caption = "キャンセル"
-		      warningDlg.CancelButton.Visible = True 
-		      warningDlg.CancelButton.Default = true
-		      warningDlg.AlternateActionButton.Visible = false 
-		      //d.AlternateActionButton.Caption = "Don't Save"
-		      //d.Explanation = "If you don't save, your changes will be lost. "
-		      warningDlg.Message = "ベースフォルダを変更した場合、管理ボタンで設定した期間日付が未設定になります"
-		      var btnClicked as MessageDialogButton = warningDlg.ShowModal()
-		      if btnClicked = warningDlg.CancelButton then
-		        return
-		      end if
-		    end if
-		    
-		    var node as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		    node.SetAttribute("path", f.NativePath)
-		    node.SetAttribute("workingPeriod", "")
-		    while node.FirstChild <> nil
-		      node.RemoveChild(node.FirstChild)
-		    Wend
-		    
-		    App.firstBoot = false
-		    
-		    App.XmlPref.SavePreference()
-		    self.BaseFolderPath.Text = f.NativePath
-		    self.BaseFolderPath.Refresh
-		    self.ReCreateDealPeriodPopupMenu(f)
-		  End If
-		  
-		  //self.MainStatusLabel.Text = ""
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events BaseFolderPath
+#tag Events ServerURL
 	#tag Event
 		Sub MouseEnter()
 		  me.Tooltip = me.Text
@@ -1663,7 +1634,7 @@ End
 		      var win as DealPeriodWindow = App.MainWin.GetPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
 		      if win = nil then
 		        win = new DealPeriodWindow
-		        win.BaseFolderPath = self.BaseFolderPath.Text
+		        win.BaseFolderPath = self.ServerURL.Text
 		        win.DealPeriod = self.DealPeriodPopupMenu.SelectedRowValue
 		        win.Title = self.DealPeriodPopupMenu.SelectedRowValue
 		        App.MainWin.DealPeriodWins.Add win
@@ -1702,7 +1673,7 @@ End
 		  var dealingNO as string = App.CreateNewNO("")
 		  
 		  if self.LastRegData <> nil then
-		    if self.LastRegData.IsSameAsNewData(self.BaseFolderPath.Text, self.DealPeriodPopupMenu.SelectedRowValue,_
+		    if self.LastRegData.IsSameAsNewData(self.ServerURL.Text, self.DealPeriodPopupMenu.SelectedRowValue,_
 		      type, date, price.ToInteger, name, partner, remark, dropF ) then
 		      System.Beep
 		      self.MainStatusLabel.Text = "前回登録したデータと同じです"
@@ -1710,15 +1681,15 @@ End
 		    end if
 		  end if
 		  
-		  var db as SQLiteDatabase = App.ConnectDB(self.DealPeriodPopupMenu.SelectedRowValue)
-		  if db = nil then
+		  var apiClient as APICLientClass = App.ConnectAPI(self.DealPeriodPopupMenu.SelectedRowValue)
+		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
-		  db.BeginTransaction()
+		  apiClient.BeginTransaction()
 		  
 		  var ret as string
-		  ret = App.InsertDeal(db, self.BaseFolderPath.Text,_
+		  ret = App.InsertDeal(apiClient, self.ServerURL.Text,_
 		  self.DealPeriodPopupMenu.SelectedRowValue,_
 		  type,_
 		  date,_
@@ -1728,14 +1699,14 @@ End
 		  price.ToInteger,_
 		  dropF, "", "", false)
 		  if ret.left(2) <> "OK" then
-		    db.RollbackTransaction()
-		    db.Close()
+		    apiClient.RollbackTransaction()
+		    apiClient.Close()
 		    self.MainStatusLabel.Text = ret
 		    return
 		  end if
 		  
-		  db.CommitTransaction()
-		  db.Close()
+		  apiClient.CommitTransaction()
+		  apiClient.Close()
 		  
 		  self.SetSearchDateOfPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue, self.DealingDate.Text)
 		  self.ReFreshPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
@@ -1743,7 +1714,7 @@ End
 		  if self.LastRegData = nil then
 		    self.LastRegData = new LastRegDataClass
 		  end if
-		  self.LastRegData.BaseFolderPath = self.BaseFolderPath.Text
+		  self.LastRegData.BaseFolderPath = self.ServerURL.Text
 		  self.LastRegData.DealPeriod = self.DealPeriodPopupMenu.SelectedRowValue
 		  self.LastRegData.DealType = type
 		  self.LastRegData.DealDate = date
@@ -1770,7 +1741,7 @@ End
 		      return
 		    end if
 		  next
-		  dim win as new DealPeriodWindow(self.BaseFolderPath.Text, self.DealPeriodPopupMenu.SelectedRowValue)
+		  dim win as new DealPeriodWindow(self.ServerURL.Text, self.DealPeriodPopupMenu.SelectedRowValue)
 		  self.DealPeriodWins.Add win
 		  //win.Title = self.DealPeriodPopupMenu.SelectedRowValue
 		  win.Show
@@ -1796,12 +1767,12 @@ End
 #tag Events ManageDealPeriodButton
 	#tag Event
 		Sub Pressed()
-		  if self.BaseFolderPath.Text = "" then
+		  if self.ServerURL.Text = "" then
 		    Return
 		  end if
 		  
 		  dim win as new ManageDealPeriodWindow
-		  win.Title = self.BaseFolderPath.Text
+		  win.Title = self.ServerURL.Text
 		  win.ShowModal
 		End Sub
 	#tag EndEvent
