@@ -8,7 +8,7 @@ Protected Class APIClientClass
 
 	#tag Method, Flags = &h0
 		Function BuildURL(endpoint As String) As String
-		   // BaseURL + endpoint の組み立て
+		  // BaseURL + endpoint の組み立て
 		End Function
 	#tag EndMethod
 
@@ -21,7 +21,7 @@ Protected Class APIClientClass
 
 	#tag Method, Flags = &h0
 		Sub CommitTransaction()
-		   // スタブ実装 - 後でAPI呼び出しに変更
+		  // スタブ実装 - 後でAPI呼び出しに変更
 		End Sub
 	#tag EndMethod
 
@@ -58,13 +58,28 @@ Protected Class APIClientClass
 
 	#tag Method, Flags = &h0
 		Function CreatePeriod(periodName As String) As Dictionary
-		   // POST /api/v1/periods
+		  // POST /api/v1/periods
+		  var periodData as new Dictionary
+		  periodData.Value("name") = periodName
+		  periodData.Value("fromDate") = "未設定"
+		  periodData.Value("toDate") = "未設定"
+		  
+		  var endpoint as String = "/api/v1/periods"
+		  return me.SendRequest("POST", endpoint, periodData)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function DeleteDeal(dealNo As String, reason As String) As Dictionary
 		  // DELETE /api/v1/deals/{dealNo}
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function DeletePeriod(periodName as String) As Dictionary
+		  // DELETE /api/v1/periods/{period}
+		  var endpoint as String = "/api/v1/periods/" + periodName
+		  return me.SendRequest("DELETE", endpoint)
 		End Function
 	#tag EndMethod
 
@@ -96,7 +111,7 @@ Protected Class APIClientClass
 
 	#tag Method, Flags = &h0
 		Function HandleHTTPError(statusCode As Integer, responseBody As String) As Dictionary
-		   // HTTPエラーの統一処理
+		  // HTTPエラーの統一処理
 		End Function
 	#tag EndMethod
 
@@ -227,7 +242,24 @@ Protected Class APIClientClass
 		    
 		    Select Case method.Uppercase
 		    Case "GET"
-		      response = request.SendSync("GET", url, me.TimeoutSeconds)
+		      try
+		        response = request.SendSync("GET", url, me.TimeoutSeconds)
+		      catch err as IOException
+		        result.Value("success") = false
+		        result.Value("message") = "ネットワークエラー: " + err.Message
+		        result.Value("httpStatusCode") = 0
+		        return result
+		      catch err as RuntimeException
+		        result.Value("success") = false
+		        result.Value("message") = "実行時エラー: " + err.Message
+		        result.Value("httpStatusCode") = 0
+		        return result
+		      catch
+		        result.Value("success") = false
+		        result.Value("message") = "不明なエラーが発生しました"
+		        result.Value("httpStatusCode") = 0
+		        return result
+		      end try
 		      
 		    Case "POST"
 		      request.RequestHeader("Content-Type") = "application/json"
@@ -235,7 +267,14 @@ Protected Class APIClientClass
 		        var jsonData as String = GenerateJSON(data)
 		        request.SetRequestContent(jsonData, "application/json")
 		      end if
-		      response = request.SendSync("POST", url, me.TimeoutSeconds)
+		      try
+		        response = request.SendSync("POST", url, me.TimeoutSeconds)
+		      catch
+		        result.Value("success") = false
+		        result.Value("message") = "サーバーに接続できません"
+		        result.Value("httpStatusCode") = 0
+		        return result
+		      end try
 		      
 		    Case "PUT"
 		      request.RequestHeader("Content-Type") = "application/json"
@@ -243,10 +282,24 @@ Protected Class APIClientClass
 		        var jsonData as String = GenerateJSON(data)
 		        request.SetRequestContent(jsonData, "application/json")
 		      end if
-		      response = request.SendSync("PUT", url, me.TimeoutSeconds)
+		      try
+		        response = request.SendSync("PUT", url, me.TimeoutSeconds)
+		      catch
+		        result.Value("success") = false
+		        result.Value("message") = "サーバーに接続できません"
+		        result.Value("httpStatusCode") = 0
+		        return result
+		      end try
 		      
 		    Case "DELETE"
-		      response = request.SendSync("DELETE", url, me.TimeoutSeconds)
+		      try
+		        response = request.SendSync("DELETE", url, me.TimeoutSeconds)
+		      catch
+		        result.Value("success") = false
+		        result.Value("message") = "サーバーに接続できません"
+		        result.Value("httpStatusCode") = 0
+		        return result
+		      end try
 		      
 		    Else
 		      result.Value("success") = false
@@ -346,6 +399,14 @@ Protected Class APIClientClass
 		Sub UpdateDeal(dealNo As String, dealData As Dictionary)
 		  // PUT /api/v1/deals/{dealNo}
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function UpdatePeriod(periodName as String, updateData as Dictionary) As Dictionary
+		  // PUT /api/v1/periods/{period}
+		  var endpoint as String = "/api/v1/periods/" + periodName
+		  return me.SendRequest("PUT", endpoint, updateData)
+		End Function
 	#tag EndMethod
 
 

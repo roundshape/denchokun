@@ -312,7 +312,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   78
+      Left            =   81
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -339,10 +339,10 @@ Begin DesktopWindow ManageDealPeriodWindow
       AllowAutoDeactivate=   True
       AllowFocusRing  =   False
       AllowTabStop    =   False
-      DisplayMode     =   0
+      DisplayMode     =   1
       DisplaySeconds  =   False
       Enabled         =   True
-      GraphicalDisplay=   False
+      GraphicalDisplay=   True
       Height          =   22
       HourMode        =   0
       Index           =   -2147483648
@@ -362,7 +362,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Top             =   299
       Transparent     =   False
       Visible         =   True
-      Width           =   15
+      Width           =   18
       _mIndex         =   0
       _mInitialParent =   ""
       _mName          =   ""
@@ -378,7 +378,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Height          =   20
       Index           =   -2147483648
       Italic          =   False
-      Left            =   78
+      Left            =   81
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -405,10 +405,10 @@ Begin DesktopWindow ManageDealPeriodWindow
       AllowAutoDeactivate=   True
       AllowFocusRing  =   False
       AllowTabStop    =   False
-      DisplayMode     =   0
+      DisplayMode     =   1
       DisplaySeconds  =   False
       Enabled         =   True
-      GraphicalDisplay=   False
+      GraphicalDisplay=   True
       Height          =   22
       HourMode        =   0
       Index           =   -2147483648
@@ -428,7 +428,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Top             =   325
       Transparent     =   False
       Visible         =   True
-      Width           =   15
+      Width           =   18
       _mIndex         =   0
       _mInitialParent =   ""
       _mName          =   ""
@@ -478,7 +478,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   211
+      Left            =   231
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -509,7 +509,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   211
+      Left            =   231
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -543,68 +543,76 @@ End
 
 	#tag Event
 		Sub Opening()
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string =base.GetAttribute("path")
-		  var baseF as folderitem
-		  baseF = new FolderItem(basePath, FolderItem.PathModes.Native)
-		  if baseF = nil then
-		    MessageBox "ベースフォルダが見つかりません"
-		    return
-		  end if
-		  
 		  self.DealPeriodList.RemoveAllRows
 		  
-		  var folderNames(), aFolderItem as FolderItemClass
-		  if baseF = nil or not baseF.Exists or not baseF.IsFolder then
+		  // APIサーバーから期間一覧を取得
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
+		  
+		  // 接続確認を先に実行
+		  if not apiClient.TestConnection() then
+		    var errorMessage as String = "APIサーバーに接続できません。" + EndOfLine + EndOfLine
+		    errorMessage = errorMessage + "サーバーURL: " + apiClient.BaseURL + EndOfLine
+		    errorMessage = errorMessage + "エラー: " + apiClient.LastError + EndOfLine + EndOfLine
+		    errorMessage = errorMessage + "設定メニューでAPIサーバーの設定を確認してください。"
+		    MessageBox(errorMessage)
 		    return
 		  end if
-		  For Each aFolder As FolderItem In baseF.Children(false)
-		    if not aFolder.IsFolder or aFolder.IsAlias or not aFolder.Visible or aFolder.name.Left(1) = "." then
-		      Continue
-		    End if
-		    aFolderItem = new FolderItemClass
-		    var aDealPeriod as DealPeriodClass = App.GetADealPeriod(aFolder.Name)
-		    if aDealPeriod = nil then
-		      aDealPeriod = new DealPeriodClass
-		      aDealPeriod.Name = aFolder.Name
-		      aDealPeriod.FromDate = "未設定"
-		      aDealPeriod.ToDate = "未設定"
+		  
+		  var result as Dictionary = apiClient.GetPeriods()
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    if result.HasKey("periods") then
+		      var periodsArray as Variant = result.Value("periods")
+		      if periodsArray.IsArray then
+		        var periodsVariantArray() as Variant = periodsArray
+		        for each periodVariant as Variant in periodsVariantArray
+		          if periodVariant isa Dictionary then
+		            var periodDict as Dictionary = Dictionary(periodVariant)
+		            
+		            // 期間情報をリストに直接追加
+		            var name as String = periodDict.Value("name").StringValue
+		            var fromDate as String = periodDict.Value("fromDate").StringValue
+		            var toDate as String = periodDict.Value("toDate").StringValue
+		            
+		            var displayText as String = name + " (" + fromDate + " - " + toDate + ")"
+		            
+		            self.DealPeriodList.AddRow("")
+		            var rowIndex as Integer = self.DealPeriodList.LastAddedRowIndex
+		            self.DealPeriodList.CellTextAt(rowIndex, 1) = displayText
+		            
+		            // 期間データをRowTagに保存
+		            var periodData as new DealPeriodClass
+		            periodData.Name = name
+		            periodData.FromDate = fromDate
+		            periodData.ToDate = toDate
+		            self.DealPeriodList.RowTagAt(rowIndex) = periodData
+		          else
+		            // 古い形式（文字列配列）の場合
+		            var periodName as String = periodVariant.StringValue
+		            var displayText as String = periodName + " (未設定 - 未設定)"
+		            
+		            self.DealPeriodList.AddRow("")
+		            var rowIndex as Integer = self.DealPeriodList.LastAddedRowIndex
+		            self.DealPeriodList.CellTextAt(rowIndex, 1) = displayText
+		            
+		            var periodData as new DealPeriodClass
+		            periodData.Name = periodName
+		            periodData.FromDate = "未設定"
+		            periodData.ToDate = "未設定"
+		            self.DealPeriodList.RowTagAt(rowIndex) = periodData
+		          end if
+		        next
+		      end if
 		    end if
-		    aFolderItem.DealPeriod = aDealPeriod
-		    if not aFolder.IsWriteable or aFolder.Child("Denchokun.ReadOnly").Exists then
-		      aFolderItem.IsWriteable = false
-		    else
-		      aFolderItem.IsWriteable = true
+		  else
+		    // エラー時の処理
+		    var errorMsg as String = "APIサーバーから期間取得に失敗しました"
+		    if result.HasKey("message") then
+		      errorMsg = errorMsg + EndOfLine + result.Value("message").StringValue
 		    end if
-		    folderNames.Add aFolderItem
-		  next
-		  folderNames.Sort(AddressOf self.CompareFolderItem)
-		  
-		  var i as integer
-		  i = 0
-		  For Each aItem As FolderItemClass In folderNames
-		    self.DealPeriodList.AddRow ""
-		    self.DealPeriodList.RowTagAt(self.DealPeriodList.LastAddedRowIndex) = aItem
-		    self.DealPeriodList.CellTypeAt(self.DealPeriodList.LastAddedRowIndex,0) = DesktopListBox.CellTypes.CheckBox
-		    self.DealPeriodList.CellAlignmentOffsetAt(self.DealPeriodList.LastAddedRowIndex,0) = 2
-		    if aItem.IsWriteable then
-		      self.DealPeriodList.CellCheckBoxValueAt(self.DealPeriodList.LastAddedRowIndex,0) = true
-		    else
-		      self.DealPeriodList.CellCheckBoxValueAt(self.DealPeriodList.LastAddedRowIndex,0) = false
-		    end if
-		    var v as string = aItem.DealPeriod.Name+" ("+aItem.DealPeriod.FromDate+" - "+aItem.DealPeriod.ToDate+")"
-		    self.DealPeriodList.CellTextAt(self.DealPeriodList.LastAddedRowIndex,1) = v
-		    i = i + 1
-		  Next
-		  
-		  self.FromDatePicker.GraphicalDisplay = true
-		  self.FromDatePicker.DisplayMode = DesktopDateTimePicker.DisplayModes.DateOnly
-		  self.ToDatePicker.GraphicalDisplay = true
-		  self.ToDatePicker.DisplayMode = DesktopDateTimePicker.DisplayModes.DateOnly
-		  
-		  //self.Updated = false
-		  
-		  
+		    MessageBox(errorMsg)
+		    return
+		  end if
 		End Sub
 	#tag EndEvent
 
@@ -647,14 +655,17 @@ End
 		Sub SelectionChanged()
 		  if me.SelectedRowCount = 0 then
 		    self.NameField.Text = ""
+		    self.FromDate.Text = ""
+		    self.ToDate.Text = ""
 		    return
 		  end if
+		  
 		  For Each aRow As DesktopListBoxRow In me.Rows
 		    if aRow.Selected then
-		      var aFolder as FolderItemClass = aRow.Tag
-		      self.NameField.Text = aFolder.DealPeriod.Name
-		      self.FromDate.Text = aFolder.DealPeriod.FromDate
-		      self.ToDate.Text = aFolder.DealPeriod.ToDate
+		      var aPeriod as DealPeriodClass = aRow.Tag  // FolderItemClass → DealPeriodClass に変更
+		      self.NameField.Text = aPeriod.Name
+		      self.FromDate.Text = aPeriod.FromDate
+		      self.ToDate.Text = aPeriod.ToDate
 		      return
 		    end if
 		  Next
@@ -671,110 +682,89 @@ End
 #tag Events SaveButton
 	#tag Event
 		Sub Pressed()
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string =base.GetAttribute("path")
-		  var baseF as folderitem
-		  baseF = new FolderItem(basePath, FolderItem.PathModes.Native)
-		  if baseF = nil then
-		    MessageBox "ベースフォルダが見つかりません"
-		    return
-		  end if
+		  // 全期間の設定をサーバーに保存
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
 		  
+		  var successCount as Integer = 0
+		  var errorCount as Integer = 0
 		  
-		  var readOnlyF as FolderItem
-		  for each aRow as DesktopListBoxRow in DealPeriodList.Rows
-		    var aRowTagF as FolderItemClass = aRow.Tag
-		    var aF as FolderItem = baseF.Child(aRowTagF.DealPeriod.Name)
-		    
-		    if aF = nil then
-		      MessageBox "FolderItem Access Error"
-		      return
-		    end if
-		    
-		    if not aF.Exists then
-		      Try
-		        aF.CreateFolder()
-		      Catch  error as IOException
-		        MessageBox error.Message
-		        return
-		      End Try
+		  try
+		    for i as Integer = 0 to self.DealPeriodList.LastRowIndex
+		      var periodData as DealPeriodClass = self.DealPeriodList.RowTagAt(i)
 		      
-		      
-		      var ret as string = App.CreateDatabaseFile(aRowTagF.DealPeriod.Name)
-		      if ret <> "OK" then
-		        MessageBox ret
-		        return
+		      if periodData <> nil then
+		        var updateData as new Dictionary
+		        updateData.Value("name") = periodData.Name
+		        updateData.Value("fromDate") = periodData.FromDate
+		        updateData.Value("toDate") = periodData.ToDate
+		        
+		        var result as Dictionary = apiClient.UpdatePeriod(periodData.Name, updateData)
+		        if result.HasKey("success") and result.Value("success").BooleanValue then
+		          successCount = successCount + 1
+		        else
+		          errorCount = errorCount + 1
+		        end if
 		      end if
+		    next
+		    
+		    if errorCount = 0 then
+		      MessageBox "すべての期間設定を保存しました（" + successCount.ToString + "件）"
+		    else
+		      MessageBox successCount.ToString + "件保存、" + errorCount.ToString + "件エラー"
 		    end if
 		    
-		    
-		    if aF.IsWriteable and not aRow.CellCheckBoxValueAt(0) then
-		      readOnlyF = aF.Child("Denchokun.ReadOnly")
-		      if not readOnlyF.Exists then
-		        Var t As TextOutputStream = TextOutputStream.Create(readOnlyF)
-		        t.Close
-		      end if
-		    elseif aF.IsWriteable and aRow.CellCheckBoxValueAt(0) then
-		      readOnlyF = aF.Child("Denchokun.ReadOnly")
-		      if readOnlyF.Exists then
-		        readOnlyF.Remove
-		      end if
-		    end if
-		  Next
-		  
-		  self.UpdateBaseFolderNode(App.XmlPref, base)
-		  App.XmlPref.SavePreference()
-		  
-		  App.MainWin.ReCreateDealPeriodPopupMenu()
-		  
-		  self.Close
-		  
+		    self.Close
+		  catch error as RuntimeException
+		    MessageBox "保存エラー: " + error.Message
+		  end try
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events AddFolderButton
 	#tag Event
 		Sub Pressed()
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string =base.GetAttribute("path")
-		  var baseF as folderitem
-		  baseF = new FolderItem(basePath, FolderItem.PathModes.Native)
-		  if baseF = nil then
-		    MessageBox "ベースフォルダが見つかりません"
+		  // 新しい期間を追加
+		  var dialog as new DealPeriodInputDialog
+		  dialog.ShowModal
+		  
+		  // ダイアログがキャンセルされた場合は終了
+		  if not dialog.DialogAns then
 		    return
 		  end if
 		  
-		  var dlg as new DealPeriodInputDialog
-		  dlg.ShowModal
-		  var periodName as string = dlg.TypeNameField.Text
-		  var ans as Boolean = dlg.DialogAns
-		  dlg.Close
-		  
-		  var newFolderPath as string = basePath+periodName
-		  var newFolderItem as FolderItem = new FolderItem(newFolderPath, FolderItem.PathModes.Native)
-		  if newFolderItem = nil then
-		    MessageBox "Access Error:Path="+newFolderPath
+		  var newPeriodName as String = dialog.TypeNameField.Text
+		  if newPeriodName = "" then
 		    return
 		  end if
 		  
-		  if newFolderItem.Exists then
-		    MessageBox "既に同名のフォルダが存在します"
-		    return
-		  end if
+		  // API経由で新しい期間を作成
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
 		  
-		  var aItem as new FolderItemClass
-		  aItem.DealPeriod = new DealPeriodClass
-		  aItem.DealPeriod.Name = periodName
-		  aItem.DealPeriod.FromDate = "未設定"
-		  aItem.DealPeriod.ToDate = "未設定"
-		  
-		  self.DealPeriodList.AddRow ""
-		  self.DealPeriodList.RowTagAt(self.DealPeriodList.LastAddedRowIndex) = aItem
-		  self.DealPeriodList.CellTypeAt(self.DealPeriodList.LastAddedRowIndex,0) = DesktopListBox.CellTypes.CheckBox
-		  self.DealPeriodList.CellCheckBoxValueAt(self.DealPeriodList.LastAddedRowIndex,0) = true //Since always true
-		  self.DealPeriodList.CellAlignmentOffsetAt(self.DealPeriodList.LastAddedRowIndex,0) = 2
-		  self.DealPeriodList.CellTextAt(self.DealPeriodList.LastAddedRowIndex,1) = periodName+" ("+aItem.DealPeriod.FromDate+" - "+aItem.DealPeriod.ToDate+")"
-		  
+		  try
+		    var result as Dictionary = apiClient.CreatePeriod(newPeriodName)  // ← ここを修正
+		    if result.HasKey("success") and result.Value("success").BooleanValue then
+		      // リストに追加
+		      var newPeriod as new DealPeriodClass
+		      newPeriod.Name = newPeriodName
+		      newPeriod.FromDate = "未設定"
+		      newPeriod.ToDate = "未設定"
+		      
+		      var displayText as String = newPeriod.Name + " (未設定 - 未設定)"
+		      
+		      self.DealPeriodList.AddRow("")
+		      var rowIndex as Integer = self.DealPeriodList.LastAddedRowIndex
+		      self.DealPeriodList.CellTextAt(rowIndex, 1) = displayText
+		      self.DealPeriodList.RowTagAt(rowIndex) = newPeriod
+		      
+		      MessageBox "新しい期間を作成しました"
+		    else
+		      MessageBox "期間の作成に失敗しました"
+		    end if
+		  catch error as RuntimeException
+		    MessageBox "サーバー接続エラー: " + error.Message
+		  end try
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -784,11 +774,13 @@ End
 		  if self.DealPeriodList.SelectedRowCount = 0 then
 		    return
 		  end if
-		  var aItem as FolderItemClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  aItem.DealPeriod.FromDate = me.SelectedDate.SQLDate
+		  
+		  var aItem as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
+		  aItem.FromDate = me.SelectedDate.SQLDate
 		  self.FromDate.Text = me.SelectedDate.SQLDate
-		  var v as string = aItem.DealPeriod.Name+" ("+aItem.DealPeriod.FromDate+" - "+aItem.DealPeriod.ToDate+")"
-		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex,1) = v
+		  
+		  var v as String = aItem.Name + " (" + aItem.FromDate + " - " + aItem.ToDate + ")"
+		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = v
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -798,11 +790,13 @@ End
 		  if self.DealPeriodList.SelectedRowCount = 0 then
 		    return
 		  end if
-		  var aItem as FolderItemClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  aItem.DealPeriod.ToDate = me.SelectedDate.SQLDate
+		  
+		  var aItem as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
+		  aItem.ToDate = me.SelectedDate.SQLDate
 		  self.ToDate.Text = me.SelectedDate.SQLDate
-		  var v as string = aItem.DealPeriod.Name+" ("+aItem.DealPeriod.FromDate+" - "+aItem.DealPeriod.ToDate+")"
-		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex,1) = v
+		  
+		  var v as String = aItem.Name + " (" + aItem.FromDate + " - " + aItem.ToDate + ")"
+		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = v
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -810,52 +804,44 @@ End
 	#tag Event
 		Sub Pressed()
 		  if self.NameField.Text = "" then
+		    MessageBox "期間名を入力してください"
 		    return
 		  end if
 		  if self.DealPeriodList.SelectedRowCount = 0 then
+		    MessageBox "期間を選択してください"
 		    return
 		  end if
 		  
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string =base.GetAttribute("path")
-		  var baseF as folderitem
-		  baseF = new FolderItem(basePath, FolderItem.PathModes.Native)
-		  if baseF = nil then
-		    MessageBox "ベースフォルダが見つかりません"
-		    return
-		  end if
+		  var selectedPeriod as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
+		  var originalName as String = selectedPeriod.Name
 		  
-		  var renamedFolderPath as string = basePath+self.NameField.Text
-		  var renamedFolderItem as FolderItem = new FolderItem(renamedFolderPath, FolderItem.PathModes.Native)
-		  if renamedFolderItem = nil then
-		    MessageBox "Access Error:Path="+renamedFolderPath
-		    return
-		  end if
+		  // API経由で期間を更新
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
 		  
-		  if renamedFolderItem.Exists then
-		    MessageBox "既に同名のフォルダが存在します"
-		    return
-		  end if
+		  var updateData as new Dictionary
+		  updateData.Value("name") = self.NameField.Text
+		  updateData.Value("fromDate") = if(self.FromDate.Text = "", "未設定", self.FromDate.Text)
+		  updateData.Value("toDate") = if(self.ToDate.Text = "", "未設定", self.ToDate.Text)
 		  
-		  var selectedRow as FolderItemClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  var selectedFolderItem as FolderItem = new FolderItem(basePath+selectedRow.DealPeriod.Name, FolderItem.PathModes.Native)
-		  
-		  
-		  Try
-		    selectedFolderItem.Name = self.NameField.Text
-		  Catch  error as IOException
-		    MessageBox error.Message
-		    return
-		  End Try
-		  
-		  selectedRow.DealPeriod.Name = self.NameField.Text
-		  selectedRow.DealPeriod.FromDate = self.FromDate.Text
-		  selectedRow.DealPeriod.ToDate = self.ToDate.Text
-		  
-		  var v as string = self.NameField.Text+" ("+self.FromDate.Text+" - "+self.ToDate.Text+")"
-		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex,1) = v
-		  
-		  //self.Updated = true
+		  try
+		    var result as Dictionary = apiClient.UpdatePeriod(originalName, updateData)
+		    if result.HasKey("success") and result.Value("success").BooleanValue then
+		      // ローカル表示を更新
+		      selectedPeriod.Name = self.NameField.Text
+		      selectedPeriod.FromDate = if(self.FromDate.Text = "", "未設定", self.FromDate.Text)
+		      selectedPeriod.ToDate = if(self.ToDate.Text = "", "未設定", self.ToDate.Text)
+		      
+		      var displayText as String = selectedPeriod.Name + " (" + selectedPeriod.FromDate + " - " + selectedPeriod.ToDate + ")"
+		      self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = displayText
+		      
+		      MessageBox "期間情報を更新しました"
+		    else
+		      MessageBox "期間の更新に失敗しました"
+		    end if
+		  catch error as RuntimeException
+		    MessageBox "サーバー接続エラー: " + error.Message
+		  end try
 		End Sub
 	#tag EndEvent
 #tag EndEvents

@@ -1208,40 +1208,32 @@ End
 		  var apiClient as new APIClientClass
 		  apiClient.BaseURL = App.GetAPIServerURL()
 		  
-		  try
-		    var result as Dictionary = apiClient.GetPeriods()
-		    if result <> nil and result.HasKey("success") and result.Value("success").BooleanValue then
-		      if result.HasKey("periods") then
-		        var periodsArray as Variant = result.Value("periods")
-		        if periodsArray.IsArray then
-		          var periodsVariantArray() as Variant = periodsArray
-		          for each periodVariant as Variant in periodsVariantArray
-		            // 新しいAPI仕様：オブジェクト形式の期間データのみ対応
-		            if periodVariant isa Dictionary then
-		              var periodDict as Dictionary = Dictionary(periodVariant)
-		              if periodDict.HasKey("name") then
-		                periodNames.Add(periodDict.Value("name").StringValue)
-		              end if
+		  
+		  var result as Dictionary = apiClient.GetPeriods()
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    if result.HasKey("periods") then
+		      var periodsArray as Variant = result.Value("periods")
+		      if periodsArray.IsArray then
+		        var periodsVariantArray() as Variant = periodsArray
+		        for each periodVariant as Variant in periodsVariantArray
+		          // 新しいAPI仕様：オブジェクト形式の期間データのみ対応
+		          if periodVariant isa Dictionary then
+		            var periodDict as Dictionary = Dictionary(periodVariant)
+		            if periodDict.HasKey("name") then
+		              periodNames.Add(periodDict.Value("name").StringValue)
 		            end if
-		          next
-		        end if
+		          end if
+		        next
 		      end if
-		    else
-		      // APIエラーまたは接続失敗時は固定リストを使用
-		      self.MainStatusLabel.Text = "APIサーバーから期間取得に失敗しました。固定リストを使用します。"
-		      periodNames.Add("2024-01")
-		      periodNames.Add("2024-02")
-		      periodNames.Add("2024-03")
-		      periodNames.Add("2024-04")
 		    end if
-		  catch error as RuntimeException
-		    // ネットワークエラー等の場合は固定リストを使用
-		    self.MainStatusLabel.Text = "サーバー接続エラー: " + error.Message
-		    periodNames.Add("2024-01")
-		    periodNames.Add("2024-02")
-		    periodNames.Add("2024-03")
-		    periodNames.Add("2024-04")
-		  end try
+		  else
+		    // エラー時（success=falseまたはresult=nil）
+		    var errorMsg as String = "APIサーバーから期間取得に失敗しました"
+		    if result <> nil and result.HasKey("message") then
+		      errorMsg = errorMsg + EndOfLine + result.Value("message").StringValue
+		    end if
+		    MessageBox(errorMsg)
+		  end if
 		  
 		  var i, workingPeriodIndex as integer
 		  workingPeriodIndex = -1
