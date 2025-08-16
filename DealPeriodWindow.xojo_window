@@ -788,35 +788,15 @@ End
 
 	#tag Method, Flags = &h0
 		Sub SearchHistory(selectRowWithNO as string = "")
-		  var key as string = self.SearchKeyField.Text
+		  var keyword as string = self.SearchKeyField.Text
+		  var fromDate as string = ""
+		  var toDate as string = ""
 		  
-		  var sql as string = "select * from Deals where nextNO is NULL"
 		  if self.FromDate.Text <> "未設定" then
-		    sql = sql+" and DealDate >= '"+self.FromDate.Text+"'"
+		    fromDate = self.FromDate.Text
 		  end if
 		  if self.ToDate.Text <> "未設定" then
-		    sql = sql+" and DealDate <= '"+self.ToDate.Text+"'"
-		  end if
-		  
-		  var otherSql as string = App.CreateSqlCondition(key)
-		  var dealPeriodNode as XmlNode = App.XmlPref.GetNode("DealPeriodWindow")
-		  if dealPeriodNode = nil then
-		    MessageBox "can't find DealPeriodWindow"
-		    return
-		  end if
-		  var orderBy as string = dealPeriodNode.GetAttribute("SearchOrder")
-		  if orderBy = "" then
-		    if otherSql = "" then
-		      sql = sql + " order by DealDate asc, NO asc"
-		    else
-		      sql = sql + " and "+otherSql+" order by DealDate asc, NO asc"
-		    end if
-		  else
-		    if otherSql = "" then
-		      sql = sql + " order by DealDate "+orderBy+", NO "+orderBy
-		    else
-		      sql = sql + " and "+otherSql+" order by DealDate "+orderBy+", NO "+orderBy
-		    end if
+		    toDate = self.ToDate.Text
 		  end if
 		  
 		  self.RecordList.RemoveAllRows
@@ -827,93 +807,80 @@ End
 		    MessageBox App.FunctionError
 		    return
 		  end if
-		  apiClient.ThreadYieldInterval = 200 //Does this work?
 		  
-		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = apiClient.SelectSQL(sql)
-		    For Each row As DatabaseRow In rowsFound
-		      var NO as string = row.Column("NO").StringValue
-		      var prevNO as string = row.Column("prevNO").StringValue
-		      var DealType as string = DecodeSqlString(row.Column("DealType").StringValue)
-		      var DealDate as string = row.Column("DealDate").StringValue
-		      var DealName as string = DecodeSqlString(row.Column("DealName").StringValue)
-		      var DealPartner as string = DecodeSqlString(row.Column("DealPartner").StringValue)
-		      var DealPrice as integer = row.Column("DealPrice").IntegerValue
-		      var RegDate as string = row.Column("RegDate").StringValue.NthField(" ",1)
-		      var RecUpdate as string = row.Column("RecUpdate").StringValue.NthField(" ",1)
-		      var FileName as string = DecodeSqlString(row.Column("FilePath").StringValue)
-		      var RecStatus as string = row.Column("RecStatus").StringValue
-		      var rowString as string
-		      if RecUpdate = "" then // Since first record set nil to RecUpdate
-		        rowString = RegDate+"_"+DealDate+"_"+DealPartner+"_"+DealPrice.ToString+"_"+DealType+"_"+DealName
-		      else
-		        rowString = RecUpdate+"_"+DealDate+"_"+DealPartner+"_"+DealPrice.ToString+"_"+DealType+"_"+DealName
+		    // HistoryなのでSearchDealsを使用（削除されたレコードも含む可能性）
+		    var result as Dictionary = apiClient.SearchDeals(self.DealPeriod, keyword, fromDate, toDate)
+		    
+		    // SearchNormalと同じレスポンス処理
+		    if result.HasKey("success") and result.Value("success").BooleanValue then
+		      if result.HasKey("deals") then
+		        var dealsArray as Variant = result.Value("deals")
+		        if dealsArray.IsArray then
+		          var deals() as Variant = dealsArray
+		          
+		          for each deal as Variant in deals
+		            if deal isa Dictionary then
+		              var dealDict as Dictionary = Dictionary(deal)
+		              
+		              var NO as string = dealDict.Value("NO").StringValue
+		              var DealDate as string = dealDict.Value("DealDate").StringValue
+		              var DealPartner as string = dealDict.Value("DealPartner").StringValue
+		              var DealPrice as string = dealDict.Value("DealPrice").StringValue
+		              var DealType as string = dealDict.Value("DealType").StringValue
+		              var DealName as string = dealDict.Value("DealName").StringValue
+		              
+		              // リストに追加
+		              self.RecordList.AddRow("")
+		              var rowString as string = DealDate + "," + DealPartner + "," + DealPrice + "," + DealType + "," + DealName
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = rowString
+		              
+		              // RowTagを設定
+		              var rowTag as new RecordListRowPropertiesClass
+		              rowTag.NO = NO
+		              rowTag.DealPeriod = self.DealPeriod
+		              self.RecordList.RowTagAt(self.RecordList.LastAddedRowIndex) = rowTag
+		              
+		              if selectRowWithNO <> "" and selectRowWithNO = NO then
+		                self.RecordList.SelectedRowIndex = self.RecordList.LastAddedRowIndex
+		              end if
+		            end if
+		          next
+		        end if
 		      end if
-		      if prevNO <> "" then
-		        self.RecordList.AddExpandableRow ""
-		      else
-		        self.RecordList.AddRow ""
+		    else
+		      var errorMsg as String = "検索エラー"
+		      if result.HasKey("message") then
+		        errorMsg = errorMsg + ": " + result.Value("message").StringValue
 		      end if
-		      var rowTag as new RecordListRowPropertiesClass
-		      rowTag.NO = NO
-		      rowTag.DealPeriod = self.DealPeriod
-		      rowTag.FilePath = self.BaseFolderPath+self.DealPeriod+"\"+FileName
-		      rowTag.RecStatus = RecStatus
-		      self.RecordList.RowTagAt(self.RecordList.LastRowIndex)=rowTag
-		      self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex,0) = rowString
-		      if selectRowWithNO <> "" and selectRowWithNO = NO then
-		        self.RecordList.SelectedRowIndex = self.RecordList.LastAddedRowIndex
-		      end if
-		    Next
-		    rowsFound.Close
-		  Catch error As DatabaseException
+		      MessageBox(errorMsg)
+		    end if
+		    
+		  Catch error As RuntimeException
 		    apiClient.Close
-		    MessageBox("Error: " + error.Message)
+		    MessageBox("API Error: " + error.Message)
 		    return
 		  End Try
-		  apiClient.Close
 		  
+		  apiClient.Close
 		  self.RecordList.Refresh(true)
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Sub SearchNormal(selectRowWithNO as string = "")
-		  dim key as string = self.SearchKeyField.Text
+		  var keyword as string = self.SearchKeyField.Text
+		  var fromDate as string = ""
+		  var toDate as string = ""
 		  
-		  var sql as string = "select * from Deals where nextNO is NULL and "+_
-		  "RecStatus <> 'DELETE'"
 		  if self.FromDate.Text <> "未設定" then
-		    sql = sql+" and DealDate >= '"+self.FromDate.Text+"'"
+		    fromDate = self.FromDate.Text
 		  end if
 		  if self.ToDate.Text <> "未設定" then
-		    sql = sql+" and DealDate <= '"+self.ToDate.Text+"'"
-		  end if
-		  
-		  var otherSql as string = App.CreateSqlCondition(key)
-		  var dealPeriodNode as XmlNode = App.XmlPref.GetNode("DealPeriodWindow")
-		  if dealPeriodNode = nil then
-		    MessageBox "can't find DealPeriodWindow"
-		    return
-		  end if
-		  var orderBy as string = dealPeriodNode.GetAttribute("SearchOrder")
-		  if orderBy = "" then
-		    if otherSql = "" then
-		      sql = sql + " order by DealDate asc, NO asc"
-		    else
-		      sql = sql + " and "+otherSql+" order by DealDate asc, NO asc"
-		    end if
-		  else
-		    if otherSql = "" then
-		      sql = sql + " order by DealDate "+orderBy+", NO "+orderBy
-		    else
-		      sql = sql + " and "+otherSql+" order by DealDate "+orderBy+", NO "+orderBy
-		    end if
+		    toDate = self.ToDate.Text
 		  end if
 		  
 		  self.RecordList.RemoveAllRows
-		  //self.RecordList.Refresh(true)
 		  
 		  var apiClient as APICLientClass
 		  apiClient = App.ConnectAPI(self.DealPeriod)
@@ -922,46 +889,60 @@ End
 		    return
 		  end if
 		  
-		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = apiClient.SelectSQL(sql)
-		    For Each row As DatabaseRow In rowsFound
-		      var NO as string = row.Column("NO").StringValue
-		      var DealType as string = row.Column("DealType").StringValue
-		      var DealDate as string = row.Column("DealDate").StringValue
-		      var DealName as string = DecodeSqlString(row.Column("DealName").StringValue)
-		      var DealPartner as string = DecodeSqlString(row.Column("DealPartner").StringValue)
-		      var DealPrice as integer = row.Column("DealPrice").IntegerValue
-		      var FileName as string = DecodeSqlString(row.Column("FilePath").StringValue)
-		      var RecStatus as string = row.Column("RecStatus").StringValue
-		      var rowTag as new RecordListRowPropertiesClass
-		      rowTag.NO = NO
-		      rowTag.DealPeriod = self.DealPeriod
-		      rowTag.FilePath = self.BaseFolderPath+self.DealPeriod+"\"+FileName
-		      rowTag.RecStatus = RecStatus
-		      
-		      self.RecordList.AddRow(DealDate)
-		      self.RecordList.RowTagAt(self.RecordList.LastRowIndex)=rowTag
-		      self.RecordList.CellTextAt(self.RecordList.LastRowIndex,1)=DealPartner
-		      self.RecordList.CellTextAt(self.RecordList.LastRowIndex,2)=DealPrice.ToString
-		      self.RecordList.CellTextAt(self.RecordList.LastRowIndex,3)=DealType
-		      self.RecordList.CellTextAt(self.RecordList.LastRowIndex,4)=DealName
-		      self.RecordList.CellAlignmentAt(self.RecordList.LastRowIndex,0)=DesktopListBox.Alignments.Center
-		      self.RecordList.CellAlignmentAt(self.RecordList.LastRowIndex,1)=DesktopListBox.Alignments.Left
-		      self.RecordList.CellAlignmentAt(self.RecordList.LastRowIndex,2)=DesktopListBox.Alignments.Left
-		      self.RecordList.CellAlignmentAt(self.RecordList.LastRowIndex,3)=DesktopListBox.Alignments.Left
-		      self.RecordList.CellAlignmentAt(self.RecordList.LastRowIndex,4)=DesktopListBox.Alignments.Left
-		    Next
-		    rowsFound.Close
-		  Catch error As DatabaseException
+		    var result as Dictionary = apiClient.SearchDeals(self.DealPeriod, keyword, fromDate, toDate)
+		    
+		    if result.HasKey("success") and result.Value("success").BooleanValue then
+		      if result.HasKey("deals") then
+		        var dealsArray as Variant = result.Value("deals")
+		        if dealsArray.IsArray then
+		          var deals() as Variant = dealsArray
+		          
+		          for each deal as Variant in deals
+		            if deal isa Dictionary then
+		              var dealDict as Dictionary = Dictionary(deal)
+		              
+		              var NO as string = dealDict.Value("NO").StringValue
+		              var DealDate as string = dealDict.Value("DealDate").StringValue
+		              var DealPartner as string = dealDict.Value("DealPartner").StringValue
+		              var DealPrice as string = dealDict.Value("DealPrice").StringValue
+		              var DealType as string = dealDict.Value("DealType").StringValue
+		              var DealName as string = dealDict.Value("DealName").StringValue
+		              
+		              // リストに追加
+		              self.RecordList.AddRow("")
+		              var rowString as string = DealDate + "," + DealPartner + "," + DealPrice + "," + DealType + "," + DealName
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = rowString
+		              
+		              // RowTagを設定（必要に応じて）
+		              var rowTag as new RecordListRowPropertiesClass
+		              rowTag.NO = NO
+		              rowTag.DealPeriod = self.DealPeriod
+		              self.RecordList.RowTagAt(self.RecordList.LastAddedRowIndex) = rowTag
+		              
+		              if selectRowWithNO <> "" and selectRowWithNO = NO then
+		                self.RecordList.SelectedRowIndex = self.RecordList.LastAddedRowIndex
+		              end if
+		            end if
+		          next
+		        end if
+		      end if
+		    else
+		      var errorMsg as String = "検索エラー"
+		      if result.HasKey("message") then
+		        errorMsg = errorMsg + ": " + result.Value("message").StringValue
+		      end if
+		      MessageBox(errorMsg)
+		    end if
+		    
+		  Catch error As RuntimeException
 		    apiClient.Close
-		    MessageBox("Error: " + error.Message)
+		    MessageBox("API Error: " + error.Message)
 		    return
 		  End Try
+		  
 		  apiClient.Close
-		  
 		  self.RecordList.Refresh(true)
-		  
 		End Sub
 	#tag EndMethod
 
@@ -1035,7 +1016,7 @@ End
 		  "NO like '"+lastNo.NthField("-",1)+"%'"
 		  sql = sql + " order by RecUpdate desc"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql, self.DealPeriod)
 		    For Each aRec As DatabaseRow In rowsFound
 		      var NO as string = aRec.Column("NO").StringValue
 		      var prevNO as string = aRec.Column("prevNO").StringValue
@@ -1111,7 +1092,7 @@ End
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql, self.DealPeriod)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")
@@ -1301,7 +1282,7 @@ End
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql, self.DealPeriod)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")

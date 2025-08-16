@@ -714,7 +714,7 @@ End
 		    var sql as string = "select FilePath, Hash from Deals where NO='"+rowTag.NO+"'"
 		    var row as RowSet
 		    try
-		      row = apiClient.SelectSQL(sql)
+		      row = apiClient.SelectSQL(sql, period)
 		    Catch e as SQLiteException
 		      self.StatusLabel.Text = e.Message
 		      Return True
@@ -874,7 +874,7 @@ End
 		    var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		    var aRec as RowSet
 		    try
-		      aRec = apiClient.SelectSQL(sql)
+		      aRec = apiClient.SelectSQL(sql, rowTag.DealPeriod)
 		    Catch err as SQLiteException
 		      self.RunningWheel.Visible = false
 		      apiClient.Close
@@ -1078,7 +1078,7 @@ End
 		  end if
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = apiClient.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql, periodF.name)
 		    For Each row As DatabaseRow In rowsFound
 		      var NO as string = row.Column("NO").StringValue
 		      var prevNO as string = row.Column("prevNO").StringValue
@@ -1163,7 +1163,7 @@ End
 		  
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = apiClient.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql, periodF.Name)
 		    For Each row As DatabaseRow In rowsFound
 		      var NO as string = row.Column("NO").StringValue
 		      var DealType as string = DecodeSqlString(row.Column("DealType").StringValue)
@@ -1282,7 +1282,7 @@ End
 		  "NO like '"+rowNO.NthField("-",1)+"%'"
 		  sql = sql + " order by RecUpdate desc"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql, aRowTag.DealPeriod)
 		    For Each aRec As DatabaseRow In rowsFound
 		      var NO as string = aRec.Column("NO").StringValue
 		      var prevNO as string = aRec.Column("prevNO").StringValue
@@ -1357,7 +1357,7 @@ End
 		  
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(sql, rowTag.DealPeriod)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")

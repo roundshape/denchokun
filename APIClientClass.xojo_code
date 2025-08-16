@@ -7,6 +7,50 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function BuildMultipartBody(boundary As String, dealData As Dictionary, fileData As MemoryBlock, fileName As String) As String
+		  var body as String = ""
+		  var CRLF as String = Chr(13) + Chr(10)
+		  
+		  // 1. dealDataパート
+		  body = body + "--" + boundary + CRLF
+		  body = body + "Content-Disposition: form-data; name=""dealData""" + CRLF
+		  body = body + "Content-Type: application/json" + CRLF + CRLF
+		  body = body + GenerateJSON(dealData) + CRLF
+		  
+		  // 2. fileパート
+		  body = body + "--" + boundary + CRLF
+		  body = body + "Content-Disposition: form-data; name=""file""; filename=""" + fileName + """" + CRLF
+		  body = body + "Content-Type: application/octet-stream" + CRLF + CRLF
+		  
+		  // ファイルデータを追加（バイナリ）
+		  // 注意: Xojoでバイナリデータを文字列に混在させる処理
+		  var bodyMB as new MemoryBlock(body.LenB + fileData.Size + boundary.LenB + 8)
+		  bodyMB.StringValue(0, body.LenB) = body
+		  var bodyTextMB as MemoryBlock = body.ConvertEncoding(Encodings.UTF8)
+		  var newSize as Integer = bodyTextMB.Size + fileData.Size
+		  var combinedMB as new MemoryBlock(newSize)
+		  
+		  // テキスト部分をコピー
+		  for i as Integer = 0 to bodyTextMB.Size - 1
+		    combinedMB.Byte(i) = bodyTextMB.Byte(i)
+		  next
+		  
+		  // ファイルデータをコピー
+		  for i as Integer = 0 to fileData.Size - 1
+		    combinedMB.Byte(bodyTextMB.Size + i) = fileData.Byte(i)
+		  next
+		  
+		  bodyMB = combinedMB
+		  
+		  // 3. 終了boundary
+		  var endBoundary as String = CRLF + "--" + boundary + "--" + CRLF
+		  bodyMB.StringValue(body.LenB + fileData.Size, endBoundary.LenB) = endBoundary
+		  
+		  return bodyMB.StringValue(0, bodyMB.Size)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function BuildURL(endpoint As String) As String
 		  // BaseURL + endpoint の組み立て
 		End Function
@@ -72,6 +116,8 @@ Protected Class APIClientClass
 	#tag Method, Flags = &h0
 		Function DeleteDeal(dealNo As String, reason As String) As Dictionary
 		  // DELETE /api/v1/deals/{dealNo}
+		  var endpoint as String = "/api/v1/deals/" + dealNo
+		  return me.SendRequest("DELETE", endpoint)
 		End Function
 	#tag EndMethod
 
@@ -120,6 +166,16 @@ Protected Class APIClientClass
 		  var endpoint as String = "/api/v1/deals"
 		  var result as Dictionary = me.SendRequest("POST", endpoint, dealData)
 		  return result
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function InsertDealWithFile(period As String, dealData As Dictionary, fileData As MemoryBlock, fileName As String) As Dictionary
+		  // 1. dealDataにperiodを追加
+		  dealData.Value("period") = period
+		  
+		  // 2. multipartリクエストを送信
+		  return me.SendMultipartRequest("POST", "/api/v1/deals", dealData, fileData, fileName)
 		End Function
 	#tag EndMethod
 
@@ -221,9 +277,83 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function SelectSQL(sql as string) As RowSet
-		  // スタブ実装 - 後で実際のAPI呼び出しに変更
-		  return nil
+		Function SelectSQL(sql As String, period As String) As RowSet
+		  // API経由でSQL実行: POST /api/v1/query
+		  
+		  var queryData as New Dictionary
+		  queryData.Value("period") = period
+		  queryData.Value("query") = sql
+		  queryData.Value("limit") = 1000  // デフォルト制限値
+		  
+		  Try
+		    var result As Dictionary = me.SendRequest("POST", "/api/v1/query", queryData)
+		    
+		    if result = nil or not result.HasKey("success") or not result.Value("success").BooleanValue then
+		      var errorMsg as String = "SQL query failed"
+		      if result <> nil and result.HasKey("message") then
+		        errorMsg = result.Value("message").StringValue
+		      end if
+		      me.LastError = errorMsg
+		      Raise New DatabaseException(errorMsg)
+		    end if
+		    
+		  Catch error As RuntimeException
+		    me.LastError = error.Message
+		    Raise New DatabaseException("API request failed: " + error.Message)
+		  End Try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function SendMultipartRequest(method As String, endpoint As String, dealData As Dictionary, fileData As MemoryBlock, fileName As String) As Dictionary
+		  var result as new Dictionary
+		  
+		  try
+		    var url as String = me.BaseURL + endpoint
+		    var request as new URLConnection
+		    
+		    // boundary文字列生成
+		    var boundary as String = "----DenchokuBoundary" + Str(Microseconds)
+		    
+		    // Content-Type設定
+		    request.RequestHeader("Content-Type") = "multipart/form-data; boundary=" + boundary
+		    request.RequestHeader("User-Agent") = "Denchokun-Client/1.0"
+		    request.AllowCertificateValidation = false
+		    
+		    var body as String = BuildMultipartBody(boundary, dealData, fileData, fileName)
+		    
+		    // SetRequestContentでボディを設定
+		    request.SetRequestContent(body, "multipart/form-data; boundary=" + boundary)
+		    
+		    // Content-Typeヘッダーは不要（SetRequestContentで設定される）
+		    // request.RequestHeader("Content-Type") = "multipart/form-data; boundary=" + boundary  // 削除
+		    
+		    // リクエスト送信（ファイルなし、戻り値あり）
+		    var response as String = request.SendSync(method, url, me.TimeoutSeconds)
+		    
+		    
+		    // レスポンス処理
+		    var httpStatus as Integer = request.HTTPStatusCode
+		    if httpStatus >= 400 then
+		      result.Value("success") = false
+		      result.Value("message") = "HTTP Error " + httpStatus.ToString
+		      result.Value("httpStatusCode") = httpStatus
+		      return result
+		    end if
+		    
+		    // JSONパース
+		    if response <> "" then
+		      result = ParseJSON(response)
+		    else
+		      result.Value("success") = true
+		    end if
+		    
+		  catch error as RuntimeException
+		    result.Value("success") = false
+		    result.Value("message") = "通信エラー: " + error.Message
+		  end try
+		  
+		  return result
 		End Function
 	#tag EndMethod
 
@@ -277,7 +407,7 @@ Protected Class APIClientClass
 		      end try
 		      
 		    Case "PUT"
-		      request.RequestHeader("Content-Type") = "application/json"
+		      request.RequestHeader("Content-Type") = "application/json"  // ← この行を追加
 		      if data <> nil then
 		        var jsonData as String = GenerateJSON(data)
 		        request.SetRequestContent(jsonData, "application/json")
@@ -402,31 +532,25 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdatePeriod(periodName as String, updateData as Dictionary) As Dictionary
-		  // PUT /api/v1/periods/{period}
-		  var endpoint as String = "/api/v1/periods/" + periodName
-		  return me.SendRequest("PUT", endpoint, updateData)
+		Function UpdatePeriodDates(periodName As String, fromDate As String, toDate As String) As Dictionary
+		  // PUT /api/v1/periods/{periodName}/dates - 日付更新専用
+		  var periodData as new Dictionary
+		  periodData.Value("fromDate") = fromDate
+		  periodData.Value("toDate") = toDate
+		  
+		  var endpoint as String = "/api/v1/periods/" + periodName + "/dates"
+		  return me.SendRequest("PUT", endpoint, periodData)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function UpdatePeriodName(oldName As String, newName As String) As Dictionary
-		  // PUT /api/v1/periods/{oldName} - 期間名のみ変更
+		  // PUT /api/v1/periods/{oldName}/name - 期間名変更専用
 		  var periodData as new Dictionary
 		  periodData.Value("newName") = newName
 		  
-		  var endpoint as String = "/api/v1/periods/" + oldName
+		  var endpoint as String = "/api/v1/periods/" + oldName + "/name"
 		  return me.SendRequest("PUT", endpoint, periodData)
-		  End Function
-		  
-		  Function UpdatePeriodDates(periodName As String, fromDate As String, toDate As String) As Dictionary
-		    // PUT /api/v1/periods/{periodName} - 日付のみ更新
-		    var periodData as new Dictionary
-		    periodData.Value("fromDate") = fromDate
-		    periodData.Value("toDate") = toDate
-		    
-		    var endpoint as String = "/api/v1/periods/" + periodName
-		    return me.SendRequest("PUT", endpoint, periodData)
 		End Function
 	#tag EndMethod
 

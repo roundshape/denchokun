@@ -1005,7 +1005,7 @@ End
 		  var sql as string = "select FilePath, Hash from Deals where NO='"+self.DealNO+"'"
 		  var row as RowSet
 		  try
-		    row = apiClient.SelectSQL(sql)
+		    row = apiClient.SelectSQL(sql, period)
 		  Catch e as SQLiteException
 		    apiClient.Close
 		    self.StatusLabel.Text = e.Message
@@ -1081,7 +1081,7 @@ End
 		  
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql, oldDealPeriod)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "select DealRemark Error: " + error.Message
@@ -1174,7 +1174,7 @@ End
 		  
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql, oldDealPeriod)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "select DealRemark Error: " + error.Message
@@ -1449,252 +1449,7 @@ End
 #tag Events UpdateButton
 	#tag Event
 		Sub Pressed()
-		  if self.DealingDate.Text = "" then
-		    self.StatusLabel.Text = "取引日が設定されていません"
-		    return
-		  end if
-		  if self.DealingPriceField.Text = "" then
-		    self.StatusLabel.Text = "取引金額が設定されていません"
-		    return
-		  end if
-		  //if self.DealingNameField.Text = "" then
-		  //self.StatusLabel.Text = "取引名が設定されていません"
-		  //return
-		  //end if
-		  if self.DealingPartnerField.Text = "" then
-		    self.StatusLabel.Text = "取引先が設定されていません"
-		    return
-		  end if
 		  
-		  if self.DropFilePathLabel.Text = "" then
-		    self.StatusLabel.Text = "電子ファイルが設定されていません"
-		    return
-		  end if
-		  
-		  var maxNameLength, maxPartnerLength, maxPriceLength as integer
-		  maxNameLength = App.XmlPref.GetNode("InputLimit").GetAttribute("namebytes").Val
-		  maxPartnerLength = App.XmlPref.GetNode("InputLimit").GetAttribute("partnerbytes").Val
-		  if self.DealingNameField.Text.Bytes > maxNameLength then
-		    self.StatusLabel.Text = "取引名の長さが規定を超えています"
-		    return
-		  end if
-		  if self.DealingPartnerField.Text.Bytes > maxPartnerLength then
-		    self.StatusLabel.Text = "取引先の長さが規定を超えています"
-		    return
-		  end if
-		  
-		  var DealPrice as string = self.DealingPriceField.Text.ReplaceAll(",","")
-		  DealPrice = DealPrice.ReplaceAll(App.kCRLF,"")
-		  DealPrice = DealPrice.ReplaceAll(App.kCR,"")
-		  DealPrice = DealPrice.ReplaceAll(App.kLF,"")
-		  DealPrice = DealPrice.ReplaceAll(App.kTAB,"")
-		  if not IsPriceNumber(DealPrice) then
-		    self.StatusLabel.Text = "金額の入力記述が間違っています"
-		    return
-		  end if
-		  maxPriceLength = App.XmlPref.GetNode("InputLimit").GetAttribute("pricebytes").Val
-		  if DealPrice.Bytes > maxPriceLength then
-		    self.StatusLabel.Text = "金額の長さが規定を超えています"
-		    return
-		  end if
-		  
-		  var updatedItems as string = self.GetContentItemsUpdated()
-		  if updatedItems = "NG" then
-		    return
-		  end if
-		  if updatedItems = "" then //Since Hash must be there
-		    self.StatusLabel.Text =  "内容が変更されていません"
-		    return
-		  end if
-		  var dic as Dictionary = App.GetRegDateAndHash(self.DealPeriodWin.DealPeriod, self.DealNO)
-		  var oldHash as string = dic.Value("Hash").StringValue
-		  //var oldHash as string = updatedItems.Middle(updatedItems.IndexOf("SHA256="))
-		  
-		  var baseNode as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  if baseNode = nil then
-		    MessageBox "can't find basefolder"
-		    return
-		  end if
-		  
-		  var DealType as string = self.DealTypePopupMenu.SelectedRowValue
-		  var oldPeriod as string = self.DealPeriodWin.DealPeriod
-		  var newPeriod as string = self.DealPeriod.SelectedRowValue
-		  var DealDate as string = self.DealingDate.Text
-		  
-		  var fromDateLimit as string = "未設定"
-		  var toDateLimit as string = "未設定"
-		  var periodDates as FromDateToDateClass
-		  periodDates = App.XmlPref.GetPeiodFromDateToDate(newPeriod)
-		  if periodDates <> nil then
-		    fromDateLimit = periodDates.FromDate
-		    toDateLimit = periodDates.ToDate
-		  end if
-		  
-		  if fromDateLimit <> "未設定" then
-		    if DealDate < fromDateLimit then
-		      self.StatusLabel.Text = "取引日が範囲内ではありません"
-		      return
-		    end if
-		  end if
-		  if toDateLimit <> "未設定" then
-		    if DealDate > toDateLimit then
-		      self.StatusLabel.Text = "取引日が範囲内ではありません"
-		      return
-		    end if
-		  end if
-		  
-		  var dropF as FolderItem = new FolderItem(self.DropFilePathLabel.Text, FolderItem.PathModes.Native)
-		  
-		  
-		  var errmsg as string = ""
-		  var DealNOsWithSameImage as string
-		  var alreadyRegistered as Boolean = false
-		  if dropF.IsFolder then
-		    alreadyRegistered = App.CheckFolderIsRegistered(dropF, self.DealPeriod.SelectedRowValue)
-		    errmsg = "ドロップしたフォルダは既に登録されています"
-		  else
-		    alreadyRegistered = App.CheckImageIsRegistered(dropF, self.DealPeriod.SelectedRowValue)
-		    errmsg = "ドロップした画像は既に登録されています"
-		  end if
-		  DealNOsWithSameImage = App.FunctionReturn
-		  if alreadyRegistered then
-		    if not self.CheckHaveOtherDealNO(self.DealNO, DealNOsWithSameImage) then
-		      alreadyRegistered = false //Since this process is update, so same image can be updated
-		    end if
-		  end if
-		  if alreadyRegistered then
-		    Var d As New MessageDialog                  // declare the MessageDialog object
-		    Var b As MessageDialogButton                // for handling the result
-		    d.IconType = MessageDialog.IconTypes.Caution // display warning icon
-		    d.ActionButton.Caption = "検索"
-		    d.ActionButton.Default = true
-		    d.CancelButton.Visible = True               // show the Cancel button
-		    d.CancelButton.Default = false
-		    d.AlternateActionButton.Caption = "続行"
-		    d.AlternateActionButton.Default = false
-		    d.AlternateActionButton.Visible = true      // show the "Don't Save" button
-		    d.Message = errmsg
-		    //d.Explanation = "If you don't save, your changes will be lost. "
-		    
-		    b = d.ShowModal                             // display the dialog
-		    Select Case b                               // determine which button was pressed.
-		    Case d.ActionButton
-		      var win as DealPeriodWindow = App.MainWin.GetPeriodWindow(self.DealPeriod.SelectedRowValue)
-		      if win = nil then
-		        win = new DealPeriodWindow
-		        win.BaseFolderPath = self.BaseFolderPath.Text
-		        win.DealPeriod = self.DealPeriod.SelectedRowValue
-		        win.Title = self.DealPeriod.SelectedRowValue
-		        App.MainWin.DealPeriodWins.Add win
-		      end if
-		      win.SearchKeyField.Text = ""
-		      var otherSameNOs as String = self.RemoveThisNOfrom(self.DealNO, App.FunctionReturn)
-		      var NOs() as string = otherSameNOs.Split(",")
-		      for each aNO as string in NOs
-		        if win.SearchKeyField.Text = "" then
-		          win.SearchKeyField.Text = "^"+aNO
-		        else
-		          win.SearchKeyField.Text = win.SearchKeyField.Text+" ^"+aNO
-		        end if
-		      next
-		      win.Show
-		      win.SearchButton.Press
-		      self.Close
-		      return
-		    Case d.CancelButton
-		      // user pressed Cancel
-		      return
-		    Case d.AlternateActionButton
-		      // user pressed AlternateActionButton
-		    End Select
-		  end if
-		  
-		  
-		  var DealName as string = self.DealingNameField.Text.ReplaceAll(" ","")
-		  DealName = DealName.ReplaceAll(App.kCRLF,"")
-		  DealName = DealName.ReplaceAll(App.kCR,"")
-		  DealName = DealName.ReplaceAll(App.kLF,"")
-		  DealName = DealName.ReplaceAll(App.kTAB,"")
-		  var DealPartner as string = self.DealingPartnerField.Text.ReplaceAll(" ","")
-		  DealPartner = DealPartner.ReplaceAll(App.kCRLF,"")
-		  DealPartner = DealPartner.ReplaceAll(App.kCR,"")
-		  DealPartner = DealPartner.ReplaceAll(App.kLF,"")
-		  DealPartner = DealPartner.ReplaceAll(App.kTAB,"")
-		  var DealRemark as string = self.DealingRemarkField.Text.ReplaceAll(" ","")
-		  
-		  Var dlg As New ReasonDialog
-		  dlg.Title = "更新確認"
-		  dlg.ActionButton.Caption = "更新"
-		  dlg.DealDateLabel.Text = DealDate
-		  dlg.DealPartnerLabel.Text = DealPartner
-		  dlg.DealPriceLabel.Text = DealPrice
-		  dlg.DealTypeLabel.Text = DealType
-		  dlg.DealNameLabel.Text = DealName
-		  dlg.DealRemarkLabel.Text = DealRemark
-		  
-		  if self.DealPeriod.SelectedRowValue <> self.DealPeriodWin.DealPeriod then
-		    dlg.MessageLabel.Text = "取引期間("+self.DealPeriod.SelectedRowValue+")に変更する指示をしています。"+App.kCR+_
-		    "上記の内容に更新します。よろしいですか？"
-		  else
-		    dlg.MessageLabel.Text = "上記の内容に更新します。よろしいですか？"
-		  end if
-		  
-		  System.Beep
-		  dlg.ShowModal 
-		  if dlg.PushedButton="CancelButton" then
-		    return
-		  end if
-		  var reason as string = dlg.Reason
-		  DealRemark = App.UpdateRemarkByReason(DealRemark, "更新理由", reason)
-		  
-		  var apiClient as APICLientClass = App.ConnectAPI(self.DealPeriod.SelectedRowValue) //could be to Period
-		  if apiClient = nil then
-		    MessageBox App.FunctionError
-		    return
-		  end if
-		  apiClient.BeginTransaction()
-		  
-		  var ret, selectRowWithNO as string
-		  ret = App.UpdateDeal(apiClient, updatedItems, self.BaseFolderPath.Text, oldPeriod, newPeriod, _
-		  self.DealNO, DealType, DealDate, DealName, DealPartner, DealRemark, DealPrice.ToInteger, _
-		  dropF)
-		  
-		  
-		  //self.StatusLabel.Text = "更新しました"
-		  if ret.Left(2) <> "OK" then
-		    apiClient.RollbackTransaction()
-		    apiClient.Close()
-		    MessageBox ret
-		    return
-		  end if
-		  
-		  apiClient.CommitTransaction()
-		  apiClient.Close()
-		  
-		  if newPeriod <> oldPeriod then
-		    selectRowWithNO = ret.NthField(":",2)
-		    App.MainWin.ReFreshPeriodWindow(oldPeriod)
-		    App.MainWin.ReFreshPeriodWindow(newPeriod,selectRowWithNO)
-		  else
-		    selectRowWithNO = ret.NthField(":",2)
-		    App.MainWin.ReFreshPeriodWindow(newPeriod,selectRowWithNO)
-		  end if
-		  
-		  //MessageBox "更新しました"
-		  Var msgDlg As New MessageDialog                  // declare the MessageDialog object
-		  Var msgDlgBtn As MessageDialogButton                // for handling the result
-		  msgDlg.IconType = MessageDialog.IconTypes.Caution // display warning icon
-		  msgDlg.ActionButton.Caption = "閉じる"
-		  msgDlg.CancelButton.Visible = False               // show the Cancel button
-		  msgDlg.AlternateActionButton.Visible = False      // show the "Don't Save" button
-		  //msgDlg.AlternateActionButton.Caption = "Don't Save"
-		  msgDlg.Message = "正常に更新しました"
-		  //d.Explanation = ""
-		  
-		  msgDlgBtn = msgDlg.ShowModal                             // display the dialog
-		  
-		  self.Close
-		  return
 		End Sub
 	#tag EndEvent
 #tag EndEvents

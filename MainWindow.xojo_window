@@ -1662,7 +1662,6 @@ End
 		  partner = partner.ReplaceAll(App.kLF,"")
 		  partner = partner.ReplaceAll(App.kTAB,"")
 		  var remark as string = self.DealingRemarkField.Text.ReplaceAll(" ","")
-		  var dealingNO as string = App.CreateNewNO("")
 		  
 		  if self.LastRegData <> nil then
 		    if self.LastRegData.IsSameAsNewData(self.ServerURL.Text, self.DealPeriodPopupMenu.SelectedRowValue,_
@@ -1678,27 +1677,51 @@ End
 		    MessageBox App.FunctionError
 		    return
 		  end if
-		  apiClient.BeginTransaction()
 		  
+		  // ★ここから新しいサーバー経由の実装 ★
+		  
+		  // 取引データの辞書作成
+		  var dealData as new Dictionary
+		  dealData.Value("DealType") = type
+		  dealData.Value("DealDate") = date
+		  dealData.Value("DealName") = name
+		  dealData.Value("DealPartner") = partner
+		  dealData.Value("DealPrice") = price.ToInteger
+		  dealData.Value("DealRemark") = remark
+		  dealData.Value("RecStatus") = "NEW"
+		  
+		  // ファイルデータ読み込み
+		  var fileData as string
+		  try
+		    var binaryFile as BinaryStream = BinaryStream.Open(dropF)
+		    fileData = binaryFile.Read(binaryFile.Length)
+		    binaryFile.Close()
+		  catch error as IOException
+		    self.MainStatusLabel.Text = "ファイル読み込みエラー: " + error.Message
+		    return
+		  end try
+		  
+		  // API経由で登録
+		  var result as Dictionary = apiClient.InsertDealWithFile(self.DealPeriodPopupMenu.SelectedRowValue, dealData, fileData, dropF.Name)
+		  
+		  // 結果処理
 		  var ret as string
-		  ret = App.InsertDeal(apiClient, self.ServerURL.Text,_
-		  self.DealPeriodPopupMenu.SelectedRowValue,_
-		  type,_
-		  date,_
-		  name,_
-		  partner,_
-		  remark,_
-		  price.ToInteger,_
-		  dropF, "", "", false)
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    ret = "OK:" + result.Value("dealNo").StringValue
+		  else
+		    if result.HasKey("message") then
+		      ret = "NG:" + result.Value("message").StringValue
+		    else
+		      ret = "NG:サーバーエラーが発生しました"
+		    end if
+		  end if
+		  
 		  if ret.left(2) <> "OK" then
-		    apiClient.RollbackTransaction()
-		    apiClient.Close()
 		    self.MainStatusLabel.Text = ret
 		    return
 		  end if
 		  
-		  apiClient.CommitTransaction()
-		  apiClient.Close()
+		  // ★ここまで新しい実装 ★
 		  
 		  self.SetSearchDateOfPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue, self.DealingDate.Text)
 		  self.ReFreshPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)

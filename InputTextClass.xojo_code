@@ -14,14 +14,6 @@ Inherits DesktopTextField
 		    sql = "select name from "+table+" where name like '%"+inputKey+"%'"
 		  end if
 		  
-		  try
-		    var rows as RowSet = App.InMDB.SelectSQL(sql)
-		    for each row as DatabaseRow in rows
-		      list.AddRow row.Column("name")
-		    next
-		  Catch e as DatabaseException
-		    return e.Message
-		  end try
 		  return "OK"
 		End Function
 	#tag EndMethod

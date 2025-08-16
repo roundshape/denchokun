@@ -373,18 +373,7 @@ End
 		    return
 		  end try
 		  
-		  var rows as RowSet
-		  try
-		    rows = App.InMDB.SelectSQL("select name from TempTable")
-		  Catch e as DatabaseException
-		    MessageBox e.Message
-		    self.Close
-		  end try
 		  
-		  var row as DatabaseRow
-		  for each row in rows
-		    self.PartnersList.AddRow row.Column("name").StringValue
-		  next
 		End Sub
 	#tag EndEvent
 
@@ -608,23 +597,7 @@ End
 		  
 		  var rows as RowSet
 		  sql = "select * from DealPartners"
-		  try
-		    rows = App.InMDB.SelectSQL(sql)
-		  catch e as DatabaseException
-		    MessageBox e.Message
-		    return
-		  end try
-		  for each row as DatabaseRow in rows
-		    var xt as XmlTextNode
-		    var PartnerNode as XmlNode
-		    xt = App.XmlPref.CreateTextNode("")
-		    xt.Value = row.Column("name").StringValue
-		    PartnerNode = App.XmlPref.CreateElement("Partner")
-		    PartnerNode.AppendChild(xt)
-		    DealPartnersNode.AppendChild(PartnerNode)
-		  next
 		  
-		  App.XmlPref.SavePreference()
 		  
 		  
 		  self.Close

@@ -141,7 +141,7 @@ Inherits DesktopApplication
 		  var apiClient as APICLientClass = App.ConnectAPI(period)
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = apiClient.SelectSQL(sql)
+		    rowsFound = apiClient.SelectSQL(sql, period)
 		    if rowsFound.RowCount > 0 then
 		      exists = true
 		      For Each row As DatabaseRow In rowsFound
@@ -331,29 +331,6 @@ Inherits DesktopApplication
 		  end if
 		  
 		  return apiClient
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function CreateNewNO(optional no as string = "") As string
-		  if no = "" then
-		    Var d As DateTime
-		    d = DateTime.Now
-		    var dealingNO as string = d.SQLDateTime.ReplaceAll("-","")
-		    dealingNO = dealingNO.ReplaceAll(":","")
-		    dealingNO = dealingNO.ReplaceAll(" ","")
-		    return dealingNO
-		  else
-		    var subNO as string = no.NthField("-",2)
-		    var newSubNO as string
-		    if subNO = "" then
-		      newSubNO = "01"
-		    else
-		      newSubNO = Format(subNO.ToInteger+1,"00")
-		    end if
-		    var mainNO as string = no.NthField("-",1)
-		    return mainNO+"-"+newSubNO
-		  end if
 		End Function
 	#tag EndMethod
 
@@ -588,101 +565,6 @@ Inherits DesktopApplication
 		  apiClient.BeginTransaction()
 		  
 		  var sql as string = "select DealRemark, FilePath from Deals where NO = '"+deleteNO+"' and nextNO is NULL"
-		  var rowSet as RowSet
-		  Try
-		    rowSet = apiClient.SelectSQL(sql)
-		  Catch error As DatabaseException
-		    apiClient.RollbackTransaction()
-		    apiClient.Close()
-		    if rollbackDB <> nil then
-		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
-		    end if
-		    return "select FilePath Error: " + error.Message
-		  End Try
-		  if rowSet.RowCount=0 then
-		    apiClient.RollbackTransaction()
-		    apiClient.Close()
-		    if rollbackDB <> nil then
-		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
-		    end if
-		    return "NO='"+deleteNO+"' のレコードが見つかりません"
-		  end if
-		  var DealRemark as string = DecodeSqlString(rowSet.Column("DealRemark").StringValue)
-		  if deleteReason <> "" then
-		    DealRemark = DealRemark+"(削除理由："+deleteReason+")"
-		  end if
-		  
-		  var FilePath as string = DecodeSqlString(rowSet.Column("FilePath").StringValue)
-		  var dic as Dictionary = App.GetDealDatePartnerPrice(deletePeriod, deleteNO)
-		  var tsFolderName as string = deleteNO+"_"+_
-		  dic.Value("DealDate").StringValue+"_"+_
-		  dic.Value("DealPartner").StringValue+"_"+_
-		  dic.Value("DealPrice").StringValue
-		  var dropF as new FolderItem(basePath+deletePeriod+"\"+tsFolderName, FolderItem.PathModes.Native)
-		  if dropF = nil then
-		    apiClient.RollbackTransaction()
-		    apiClient.Close()
-		    if rollbackDB <> nil then
-		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
-		    end if
-		    return "DeleteDeal dropF is nil"
-		  end if
-		  
-		  var yesTS as Boolean = false
-		  var newFilePath as string
-		  if dropF.Exists and dropF.IsFolder then //FilePath is TimeStamped
-		    yesTS = true
-		  end if
-		  newFilePath = "."+FilePath
-		  
-		  Var d As DateTime
-		  d = DateTime.Now
-		  //set nextNo of NO
-		  sql = "update Deals set RecStatus='DELETE', DealRemark='"+EncodeSqlString(DealRemark)+_
-		  "', FilePath='"+newFilePath+"', RecUpdate='"+d.SQLDateTime+"' where NO='"+deleteNO+"'"
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    apiClient.RollbackTransaction()
-		    apiClient.Close()
-		    if rollbackDB <> nil then
-		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
-		    end if
-		    return "update Deals Error: " + error.Message
-		  End Try
-		  
-		  var DocPath as string
-		  var DocF as FolderItem
-		  if yesTS then
-		    DocPath = basePath+deletePeriod+"\"+tsFolderName
-		    DocF = new FolderItem(DocPath, FolderItem.PathModes.Native)
-		    if not DocF.Exists then
-		      apiClient.RollbackTransaction()
-		      apiClient.Close()
-		      if rollbackDB <> nil then
-		        App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
-		      end if
-		      return "フォルダ("+FilePath+")が存在しません"
-		    end if
-		    DocF.Name = "."+tsFolderName
-		  else
-		    DocPath = basePath+deletePeriod+"\"+FilePath
-		    DocF = new FolderItem(DocPath, FolderItem.PathModes.Native)
-		    if not DocF.Exists then
-		      apiClient.RollbackTransaction()
-		      apiClient.Close()
-		      if rollBackDB <> nil then
-		        App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
-		      end if
-		      return "ファイル("+FilePath+")が存在しません"
-		    end if
-		    DocF.Name = newFilePath
-		  end if
-		  
-		  DocF.Visible = false
-		  
-		  apiClient.CommitTransaction()
-		  apiClient.Close()
 		  
 		  return "OK"
 		End Function
@@ -757,7 +639,7 @@ Inherits DesktopApplication
 		  var sql as string = "select DealDate, DealPartner, DealPrice from Deals where NO = '"+NO+"'"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql, period)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "GetDealDatePartnerPrice Error: " + error.Message
@@ -801,7 +683,7 @@ Inherits DesktopApplication
 		  var sql as string = "select RegDate, Hash from Deals where NO = '"+NO+"'"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql)
+		    rowSet = apiClient.SelectSQL(sql, period)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "GetRegDateAndHash Error: " + error.Message
@@ -828,29 +710,6 @@ Inherits DesktopApplication
 		    return ret
 		  end if
 		  return ""
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function InsertDeal(db as APICLientClass, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, regDate as string, update as Boolean) As string
-		  
-		  var isTS as Boolean = false
-		  var newNO as string = App.CreateNewNO("")
-		  var ret as String
-		  if dropF.IsFolder then
-		    // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
-		    ret = me.InsertDealForFolderUnderTSAoff(db, newNO, basePath, period, type, dealDate, dealName, _
-		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
-		  else
-		    // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
-		    ret = me.InsertDealForFileUnderTSAoff(db, newNO, basePath, period, type, dealDate, dealName, _
-		    dealPartner, dealRemark, price, dropF, hash, isTS, regDate, update)
-		  end if
-		  if ret = "OK" then
-		    return "OK:"+newNO
-		  else
-		    return ret
-		  end if
 		End Function
 	#tag EndMethod
 
@@ -1233,7 +1092,7 @@ Inherits DesktopApplication
 		  var deleteFilePath as string
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = rollBackApiClient.SelectSQL("SELECT FilePath FROM Deals WHERE NO='"+rollbackNO+"'")
+		    rowsFound = rollBackApiClient.SelectSQL("SELECT FilePath FROM Deals WHERE NO='"+rollbackNO+"'", rollbackPeriod )
 		    if rowsFound.RowCount = 0 then
 		      MessageBox "RollBackInsertFilePathRecord(): can't find a record NO='"+rollbackNO+"'"
 		      return
@@ -1310,93 +1169,16 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function UpdateDeal(db as APICLientClass, updatedItems as string, basePath as string, oldPeriod as string, newPeriod as string, dealNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, dealPrice as integer, dropF as folderitem) As string
-		  var isTS as Boolean = false
-		  var dic as Dictionary = App.GetRegDateAndHash(oldPeriod, dealNO)
-		  var oldHash as string = dic.Value("Hash").StringValue
-		  var regDate as string = dic.Value("RegDate").StringValue
-		  
-		  //var selectRowWithNO as string = ""
-		  var ret as string = ""
-		  if newPeriod <> oldPeriod then
-		    Var findPos As Integer
-		    findPos = updatedItems.IndexOf("FilePath") // returns -1
-		    if findPos < 0 then //FilePath not found
-		      ret = App.UpdateDealinDifferentPeriod(db, basePath, oldPeriod, newPeriod, _
-		      dealNO, dealType, dealDate, dealName, dealPartner, dealRemark, dealPrice, dropF, oldHash, isTS, regDate)
-		    else
-		      ret = App.UpdateDealinDifferentPeriod(db, basePath, oldPeriod, newPeriod, _
-		      dealNO, dealType, dealDate, dealName, dealPartner, dealRemark, dealPrice, dropF, "", isTS, regDate)
-		    end if
-		    if ret.left(2) <> "OK" then
-		      return ret
-		    end if
-		    //selectRowWithNO = ret.NthField(":",2)
-		    //App.MainWin.ReFreshPeriodWindow(oldPeriod)
-		    //App.MainWin.ReFreshPeriodWindow(newPeriod,selectRowWithNO)
-		    return ret
-		  else
-		    Var findPos As Integer
-		    findPos = updatedItems.IndexOf("FilePath") // returns -1
-		    if findPos < 0 then
-		      ret = App.UpdateDealinSamePeriod(db, basePath, newPeriod, _
-		      dealNO, dealType, dealDate, dealName, dealPartner, dealRemark, dealPrice, dropF, oldHash, isTS, regDate)
-		    else
-		      ret = App.UpdateDealinSamePeriod(db, basePath, newPeriod, _
-		      dealNO, dealType, dealDate, dealName, dealPartner, dealRemark, dealPrice, dropF, "", isTS, regDate)
-		    end if
-		    if ret.left(2) <> "OK" then
-		      return ret
-		    end if
-		    
-		    //selectRowWithNO = ret.NthField(":",2)
-		    //App.MainWin.ReFreshPeriodWindow(oldPeriod,selectRowWithNO)
-		  end if
-		  
-		  return ret
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function UpdateDealinDifferentPeriod(db as APICLientClass, basePath as string, oldPeriod as string, newPeriod as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
-		  var ret as string
-		  ret = App.InsertDeal(db, basePath, newPeriod, dealType, dealDate, dealName, dealPartner, dealRemark, price, _
-		  dropF, hash, regDate, false) //Since insert to newPeriod, this must not be update
-		  if ret.left(2) <> "OK" then
-		    return ret
-		  end if
-		  
-		  //Try to delete old record and RollBack(Delete) above record when deletion is failed
-		  var newNO as string = ret.Middle(3)
-		  var deleteReason as string = newPeriod+"へ"
-		  ret = App.DeleteDeal(basePath, oldPeriod, oldNO, deleteReason, db, newPeriod, newNO)
-		  if ret.left(2) <> "OK" then
-		    return ret
-		  end if
-		  
-		  
-		  return ret //"OK:"+newNO
-		  
+		  // TODO: API経由の実装に変更予定
+		  return "NG:未実装"
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function UpdateDealinSamePeriod(db as APICLientClass, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as String) As string
-		  var newNO as string = App.CreateNewNO(oldNO) // add or incr '-00'
-		  
-		  var ret as string
-		  if dropF.IsFolder then //When dropF is Folder, dropF must be newly Dropped. So, Digital File should be updated
-		    ret = App.UpdateDealinSamePeriodForFolder(db, newNO, basePath, period, oldNO, _
-		    dealType, dealDate, dealName, dealPartner, dealRemark, price, dropF, hash, isTS, regDate)
-		  else //When dropF is File, Digital File could be Either new File or prev File(nonTS or TS)
-		    ret = App.UpdateDealinSamePeriodForFile(db, newNO, basePath, period, oldNO, _
-		    dealType, dealDate, dealName, dealPartner, dealRemark, price, dropF, hash, isTS, regDate)
-		  end if
-		  if ret <> "OK" then
-		    return ret
-		  end if
-		  
-		  return "OK:"+newNO //+newNO
+		  // TODO: API経由の実装に変更予定
+		  return "NG:未実装"
 		End Function
 	#tag EndMethod
 
