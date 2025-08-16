@@ -1,5 +1,6 @@
 # Xojo build outputs
 Builds - Denchokun*/
+DebugDenchokun/
 
 # Inno Setup generated installer at repo root
 /Denchokun-*.exe

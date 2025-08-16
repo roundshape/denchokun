@@ -1565,33 +1565,34 @@ End
 		  var date as string = self.DealingDate.Text
 		  var fromDateLimit as string = "未設定"
 		  var toDateLimit as string = "未設定"
-		  var periodNode as XmlNode = baseNode.FirstChild
-		  if periodNode <> nil then
-		    while periodNode <> nil
-		      if periodNode.FirstChild = nil then
-		        MessageBox "can't find period name node"
-		        return
+		  
+		  // APIサーバーから期間の詳細情報を取得
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
+		  var periodResult as Dictionary = apiClient.GetPeriod(self.DealPeriodPopupMenu.SelectedRowValue)
+		  
+		  if periodResult.HasKey("success") and periodResult.Value("success").BooleanValue then
+		    if periodResult.HasKey("period") then
+		      var periodData as Dictionary = Dictionary(periodResult.Value("period"))
+		      if periodData.HasKey("fromDate") then
+		        fromDateLimit = periodData.Value("fromDate").StringValue
 		      end if
-		      var name as string = periodNode.FirstChild.Value
-		      if name = self.DealPeriodPopupMenu.SelectedRowValue then
-		        exit
-		      end if
-		      periodNode = periodNode.NextSibling
-		    wend
-		    fromDateLimit = periodNode.GetAttribute("FromDate")
-		    toDateLimit = periodNode.GetAttribute("ToDate")
-		    
-		    if fromDateLimit <> "未設定" then
-		      if date < fromDateLimit then
-		        self.MainStatusLabel.Text = "取引日が範囲内ではありません"
-		        return
+		      if periodData.HasKey("toDate") then
+		        toDateLimit = periodData.Value("toDate").StringValue
 		      end if
 		    end if
-		    if toDateLimit <> "未設定" then
-		      if date > toDateLimit then
-		        self.MainStatusLabel.Text = "取引日が範囲内ではありません"
-		        return
-		      end if
+		  end if
+		  
+		  if fromDateLimit <> "未設定" then
+		    if date < fromDateLimit then
+		      self.MainStatusLabel.Text = "取引日が範囲内ではありません"
+		      return
+		    end if
+		  end if
+		  if toDateLimit <> "未設定" then
+		    if date > toDateLimit then
+		      self.MainStatusLabel.Text = "取引日が範囲内ではありません"
+		      return
 		    end if
 		  end if
 		  
@@ -1599,13 +1600,13 @@ End
 		  
 		  var errmsg as string = ""
 		  var alreadyRegistered as Boolean = false
-		  if dropF.IsFolder then
-		    alreadyRegistered = App.CheckFolderIsRegistered(dropF, self.DealPeriodPopupMenu.SelectedRowValue)
-		    errmsg = "ドロップしたフォルダは既に登録されています"
-		  else
-		    alreadyRegistered = App.CheckImageIsRegistered(dropF, self.DealPeriodPopupMenu.SelectedRowValue)
-		    errmsg = "ドロップした画像は既に登録されています"
-		  end if
+		  //if dropF.IsFolder then
+		  //alreadyRegistered = App.CheckFolderIsRegistered(dropF, self.DealPeriodPopupMenu.SelectedRowValue)
+		  //errmsg = "ドロップしたフォルダは既に登録されています"
+		  //else
+		  //alreadyRegistered = App.CheckImageIsRegistered(dropF, self.DealPeriodPopupMenu.SelectedRowValue)
+		  //errmsg = "ドロップした画像は既に登録されています"
+		  //end if
 		  if alreadyRegistered then
 		    Var d As New MessageDialog                  // declare the MessageDialog object
 		    Var b As MessageDialogButton                // for handling the result
@@ -1672,13 +1673,6 @@ End
 		    end if
 		  end if
 		  
-		  var apiClient as APICLientClass = App.ConnectAPI(self.DealPeriodPopupMenu.SelectedRowValue)
-		  if apiClient = nil then
-		    MessageBox App.FunctionError
-		    return
-		  end if
-		  
-		  // ★ここから新しいサーバー経由の実装 ★
 		  
 		  // 取引データの辞書作成
 		  var dealData as new Dictionary
@@ -1691,7 +1685,7 @@ End
 		  dealData.Value("RecStatus") = "NEW"
 		  
 		  // ファイルデータ読み込み
-		  var fileData as string
+		  var fileData as MemoryBlock
 		  try
 		    var binaryFile as BinaryStream = BinaryStream.Open(dropF)
 		    fileData = binaryFile.Read(binaryFile.Length)
@@ -1721,10 +1715,9 @@ End
 		    return
 		  end if
 		  
-		  // ★ここまで新しい実装 ★
 		  
-		  self.SetSearchDateOfPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue, self.DealingDate.Text)
-		  self.ReFreshPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
+		  //self.SetSearchDateOfPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue, self.DealingDate.Text)
+		  //self.ReFreshPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
 		  
 		  if self.LastRegData = nil then
 		    self.LastRegData = new LastRegDataClass

@@ -22,13 +22,13 @@ Protected Class APIClientClass
 		  body = body + "Content-Disposition: form-data; name=""file""; filename=""" + fileName + """" + CRLF
 		  body = body + "Content-Type: application/octet-stream" + CRLF + CRLF
 		  
-		  // ファイルデータを追加（バイナリ）
-		  // 注意: Xojoでバイナリデータを文字列に混在させる処理
-		  var bodyMB as new MemoryBlock(body.LenB + fileData.Size + boundary.LenB + 8)
-		  bodyMB.StringValue(0, body.LenB) = body
+		  // 3. 終了boundary
+		  var endBoundary as String = CRLF + "--" + boundary + "--" + CRLF
+		  
+		  // MemoryBlock作成
 		  var bodyTextMB as MemoryBlock = body.ConvertEncoding(Encodings.UTF8)
-		  var newSize as Integer = bodyTextMB.Size + fileData.Size
-		  var combinedMB as new MemoryBlock(newSize)
+		  var totalSize as Integer = bodyTextMB.Size + fileData.Size + endBoundary.LenB
+		  var combinedMB as new MemoryBlock(totalSize)
 		  
 		  // テキスト部分をコピー
 		  for i as Integer = 0 to bodyTextMB.Size - 1
@@ -40,13 +40,14 @@ Protected Class APIClientClass
 		    combinedMB.Byte(bodyTextMB.Size + i) = fileData.Byte(i)
 		  next
 		  
-		  bodyMB = combinedMB
+		  // 終了boundaryをコピー
+		  var endBoundaryMB as MemoryBlock = endBoundary.ConvertEncoding(Encodings.UTF8)
+		  var endPos as Integer = bodyTextMB.Size + fileData.Size
+		  for i as Integer = 0 to endBoundaryMB.Size - 1
+		    combinedMB.Byte(endPos + i) = endBoundaryMB.Byte(i)
+		  next
 		  
-		  // 3. 終了boundary
-		  var endBoundary as String = CRLF + "--" + boundary + "--" + CRLF
-		  bodyMB.StringValue(body.LenB + fileData.Size, endBoundary.LenB) = endBoundary
-		  
-		  return bodyMB.StringValue(0, bodyMB.Size)
+		  return combinedMB.StringValue(0, combinedMB.Size)
 		End Function
 	#tag EndMethod
 
@@ -145,6 +146,14 @@ Protected Class APIClientClass
 		Function GetDealsByPeriod(period As String) As Dictionary
 		  // GET /api/v1/deals?period={period}
 		  return me.SendRequest("GET", "/api/v1/deals?period=" + period)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function GetPeriod(periodName As String) As Dictionary
+		  // GET /api/v1/periods/{periodName}
+		  var endpoint as String = "/api/v1/periods/" + periodName
+		  return me.SendRequest("GET", endpoint)
 		End Function
 	#tag EndMethod
 
@@ -315,18 +324,14 @@ Protected Class APIClientClass
 		    // boundary文字列生成
 		    var boundary as String = "----DenchokuBoundary" + Str(Microseconds)
 		    
-		    // Content-Type設定
-		    request.RequestHeader("Content-Type") = "multipart/form-data; boundary=" + boundary
+		    // Content-Type設定は削除（SetRequestContentで自動設定される）
 		    request.RequestHeader("User-Agent") = "Denchokun-Client/1.0"
 		    request.AllowCertificateValidation = false
-		    
 		    var body as String = BuildMultipartBody(boundary, dealData, fileData, fileName)
 		    
 		    // SetRequestContentでボディを設定
 		    request.SetRequestContent(body, "multipart/form-data; boundary=" + boundary)
 		    
-		    // Content-Typeヘッダーは不要（SetRequestContentで設定される）
-		    // request.RequestHeader("Content-Type") = "multipart/form-data; boundary=" + boundary  // 削除
 		    
 		    // リクエスト送信（ファイルなし、戻り値あり）
 		    var response as String = request.SendSync(method, url, me.TimeoutSeconds)
