@@ -659,35 +659,47 @@ End
 		  self.ToDateTimePicker.GraphicalDisplay = true
 		  self.ToDateTimePicker.DisplayMode = DesktopDateTimePicker.DisplayModes.DateOnly
 		  
-		  var baseNode as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  if baseNode = nil then
-		    MessageBox "can't find basefolder"
-		    return
-		  end if
 		  
 		  //find out the fromDateLimit and the toDateLimite
 		  var fromDateLimit as string = "未設定"
 		  var toDateLimit as string = "未設定"
-		  var periodNode as XmlNode = baseNode.FirstChild
-		  if periodNode <> nil then
-		    while periodNode <> nil
-		      if periodNode.FirstChild = nil then
-		        MessageBox "can't find period name node"
-		        return
-		      end if
-		      var name as string = periodNode.FirstChild.Value
-		      if name = self.DealPeriod then
-		        exit
-		      end if
-		      periodNode = periodNode.NextSibling
-		    wend
-		    if periodNode <> nil then //self.DealPeriod found
-		      fromDateLimit = periodNode.GetAttribute("FromDate")
-		      toDateLimit = periodNode.GetAttribute("ToDate")
-		      //else //self.DealPeriod not found
-		      // "未設定" is asssigned
-		    end if
+		  
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
+		  
+		  // 接続確認を先に実行
+		  if not apiClient.TestConnection() then
+		    var errorMessage as String = "APIサーバーに接続できません。" + EndOfLine + EndOfLine
+		    errorMessage = errorMessage + "サーバーURL: " + apiClient.BaseURL + EndOfLine
+		    errorMessage = errorMessage + "エラー: " + apiClient.LastError + EndOfLine + EndOfLine
+		    errorMessage = errorMessage + "設定メニューでAPIサーバーの設定を確認してください。"
+		    MessageBox(errorMessage)
+		    return
 		  end if
+		  
+		  // 指定期間の詳細情報を取得
+		  var result as Dictionary = apiClient.GetPeriod(self.DealPeriod)
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    if result.HasKey("period") then
+		      var periodData as Dictionary = Dictionary(result.Value("period"))
+		      if periodData.HasKey("fromDate") then
+		        fromDateLimit = periodData.Value("fromDate").StringValue
+		      end if
+		      if periodData.HasKey("toDate") then
+		        toDateLimit = periodData.Value("toDate").StringValue
+		      end if
+		    end if
+		  else
+		    var errorMsg as String = "期間情報の取得に失敗しました"
+		    if result.HasKey("message") then
+		      errorMsg = errorMsg + ": " + result.Value("message").StringValue
+		    end if
+		    MessageBox(errorMsg)
+		    // エラーでも処理を続行（デフォルトの"未設定"を使用）
+		  end if
+		  
+		  apiClient.Close
+		  
 		  
 		  if fromDateLimit = "未設定" then
 		    self.FromDate.Text = fromDateLimit
@@ -716,7 +728,6 @@ End
 		  self.RecordList.ColumnAlignmentAt(3)=DesktopListBox.Alignments.Center
 		  self.RecordList.ColumnAlignmentAt(4)=DesktopListBox.Alignments.Center
 		  
-		  //self.SearchAndGetResults()
 		End Sub
 	#tag EndEvent
 
