@@ -141,7 +141,7 @@ Inherits DesktopApplication
 		  var apiClient as APICLientClass = App.ConnectAPI(period)
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = apiClient.SelectSQL(sql, period)
+		    rowsFound = apiClient.SelectSQL(period, sql)
 		    if rowsFound.RowCount > 0 then
 		      exists = true
 		      For Each row As DatabaseRow In rowsFound
@@ -639,7 +639,7 @@ Inherits DesktopApplication
 		  var sql as string = "select DealDate, DealPartner, DealPrice from Deals where NO = '"+NO+"'"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql, period)
+		    rowSet = apiClient.SelectSQL(period, sql)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "GetDealDatePartnerPrice Error: " + error.Message
@@ -683,7 +683,7 @@ Inherits DesktopApplication
 		  var sql as string = "select RegDate, Hash from Deals where NO = '"+NO+"'"
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql, period)
+		    rowSet = apiClient.SelectSQL(period, sql)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "GetRegDateAndHash Error: " + error.Message
@@ -1088,11 +1088,40 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub LoadDealPartnersToInMemoryDB()
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = me.GetAPIServerURL()
+		  
+		  try
+		    var result as Dictionary = apiClient.GetDealPartners()
+		    if result.HasKey("success") and result.Value("success").BooleanValue then
+		      // In Memory DBのDealPartnersテーブルを更新
+		      me.InMDB.ExecuteSQL("DELETE FROM DealPartners")
+		      
+		      if result.HasKey("partners") then
+		        var partnersArray as Variant = result.Value("partners")
+		        if partnersArray.IsArray then
+		          var partners() as Variant = partnersArray
+		          for each partner as Variant in partners
+		            var sql as String = "INSERT INTO DealPartners (name) VALUES ('" + EncodeSqlString(partner.StringValue) + "')"
+		            me.InMDB.ExecuteSQL(sql)
+		          next
+		        end if
+		      end if
+		    end if
+		  catch error as RuntimeException
+		    // 接続失敗時は既存のIn Memory DBデータをそのまま使用
+		    // エラーは無視してオフラインモードで継続
+		  end try
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub RollBackInsertedFilePathRecord(basePath as string, rollBackApiClient as APICLientClass, rollbackPeriod as string, rollbackNO as string)
 		  var deleteFilePath as string
 		  Var rowsFound As RowSet
 		  Try
-		    rowsFound = rollBackApiClient.SelectSQL("SELECT FilePath FROM Deals WHERE NO='"+rollbackNO+"'", rollbackPeriod )
+		    rowsFound = rollBackApiClient.SelectSQL(rollbackPeriod, "SELECT FilePath FROM Deals WHERE NO='"+rollbackNO+"'" )
 		    if rowsFound.RowCount = 0 then
 		      MessageBox "RollBackInsertFilePathRecord(): can't find a record NO='"+rollbackNO+"'"
 		      return

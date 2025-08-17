@@ -911,8 +911,11 @@ End
 		              
 		              // リストに追加
 		              self.RecordList.AddRow("")
-		              var rowString as string = DealDate + "," + DealPartner + "," + DealPrice + "," + DealType + "," + DealName
-		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = rowString
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = DealDate      // 取引日
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 1) = DealPartner   // 取引先  
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 2) = DealPrice     // 金額
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 3) = DealType      // 種別
+		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 4) = DealName      // 取引名
 		              
 		              // RowTagを設定（必要に応じて）
 		              var rowTag as new RecordListRowPropertiesClass
@@ -1016,7 +1019,7 @@ End
 		  "NO like '"+lastNo.NthField("-",1)+"%'"
 		  sql = sql + " order by RecUpdate desc"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql, self.DealPeriod)
+		    var rowsFound as RowSet = apiClient.SelectSQL(self.DealPeriod, sql)
 		    For Each aRec As DatabaseRow In rowsFound
 		      var NO as string = aRec.Column("NO").StringValue
 		      var prevNO as string = aRec.Column("prevNO").StringValue
@@ -1092,7 +1095,7 @@ End
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql, self.DealPeriod)
+		    var rowsFound as RowSet = apiClient.SelectSQL(self.DealPeriod, sql)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")
@@ -1282,7 +1285,7 @@ End
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(sql, self.DealPeriod)
+		    var rowsFound as RowSet = apiClient.SelectSQL(self.DealPeriod, sql)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")

@@ -1005,7 +1005,7 @@ End
 		  var sql as string = "select FilePath, Hash from Deals where NO='"+self.DealNO+"'"
 		  var row as RowSet
 		  try
-		    row = apiClient.SelectSQL(sql, period)
+		    row = apiClient.SelectSQL(period, sql)
 		  Catch e as SQLiteException
 		    apiClient.Close
 		    self.StatusLabel.Text = e.Message
@@ -1081,7 +1081,7 @@ End
 		  
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql, oldDealPeriod)
+		    rowSet = apiClient.SelectSQL(oldDealPeriod, sql)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "select DealRemark Error: " + error.Message
@@ -1174,7 +1174,7 @@ End
 		  
 		  var rowSet as RowSet
 		  Try
-		    rowSet = apiClient.SelectSQL(sql, oldDealPeriod)
+		    rowSet = apiClient.SelectSQL(oldDealPeriod, sql)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox "select DealRemark Error: " + error.Message

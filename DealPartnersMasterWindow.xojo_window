@@ -365,6 +365,10 @@ End
 
 	#tag Event
 		Sub Opening()
+		  // サーバーから最新データを取得してIn Memory DB更新
+		  App.LoadDealPartnersToInMemoryDB()
+		  
+		  // 既存のTempTable作成処理
 		  var sql as string = "CREATE TABLE TempTable AS SELECT * FROM DealPartners"
 		  try
 		    App.InMDB.ExecuteSQL(sql)
@@ -559,49 +563,78 @@ End
 #tag Events SaveButton
 	#tag Event
 		Sub Pressed()
-		  var InMDBNode as XmlNode = App.XmlPref.GetNode("InMDB")
-		  if InMDBNode = nil then
-		    MessageBox "can't get InMDB node"
-		    return
-		  end if
-		  var DealPartnersNode as XmlNode = InMDBNode.FirstChild
-		  if DealPartnersNode = nil then
-		    MessageBox "can't get DealPartners node"
-		    return
-		  end if
-		  if DealPartnersNode.Name <> "DealPartners" then
-		    MessageBox "can't get DealPartners node"
-		    return
-		  end if
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
 		  
-		  var sql as string = "drop table DealPartners"
+		  // 1. サーバーから最新の取引先一覧を取得
+		  var originalPartners() as String
 		  try
-		    App.InMDB.ExecuteSQL(sql)
+		    var result as Dictionary = apiClient.GetDealPartners()
+		    if result.HasKey("success") and result.Value("success").BooleanValue then
+		      if result.HasKey("partners") then
+		        var partnersArray as Variant = result.Value("partners")
+		        if partnersArray.IsArray then
+		          var partners() as Variant = partnersArray
+		          for each partner as Variant in partners
+		            originalPartners.Add(partner.StringValue)
+		          next
+		        end if
+		      end if
+		    else
+		      MessageBox "サーバーから取引先一覧の取得に失敗しました"
+		      return
+		    end if
+		  catch e as RuntimeException
+		    MessageBox "サーバー通信エラー: " + e.Message
+		    return
+		  end try
+		  
+		  // 2. In Memory DBのTempTableから現在の編集データを取得
+		  var tempPartners() as String
+		  try
+		    var rowsTemp as RowSet = App.InMDB.SelectSQL("", "SELECT name FROM TempTable")
+		    For Each row As DatabaseRow In rowsTemp
+		      tempPartners.Add(row.Column("name").StringValue)
+		    next
+		  catch e as DatabaseException
+		    MessageBox "作業データの読み込みエラー: " + e.Message
+		    return
+		  end try
+		  
+		  // 3. 削除された項目をサーバーから削除
+		  for each originalPartner as String in originalPartners
+		    if tempPartners.IndexOf(originalPartner) = -1 then
+		      // TempTableにないので削除された
+		      var result as Dictionary = apiClient.DeleteDealPartner(originalPartner)
+		      if not (result.HasKey("success") and result.Value("success").BooleanValue) then
+		        MessageBox "削除に失敗しました: " + originalPartner
+		        return
+		      end if
+		    end if
+		  next
+		  
+		  // 4. 追加された項目をサーバーに追加
+		  for each tempPartner as String in tempPartners
+		    if originalPartners.IndexOf(tempPartner) = -1 then
+		      // 元のDealPartnersにないので追加された
+		      var result as Dictionary = apiClient.AddDealPartner(tempPartner)
+		      if not (result.HasKey("success") and result.Value("success").BooleanValue) then
+		        MessageBox "追加に失敗しました: " + tempPartner
+		        return
+		      end if
+		    end if
+		  next
+		  
+		  // 5. 成功したらIn Memory DBのDealPartnersテーブルを更新
+		  try
+		    App.InMDB.ExecuteSQL("DROP TABLE IF EXISTS DealPartners")
+		    App.InMDB.ExecuteSQL("CREATE TABLE DealPartners AS SELECT * FROM TempTable")
 		  catch e as DatabaseException
 		    MessageBox e.Message
 		    return
 		  end try
-		  sql = "CREATE TABLE DealPartners AS SELECT * FROM TempTable"
-		  try
-		    App.InMDB.ExecuteSQL(sql)
-		  catch e as DatabaseException
-		    MessageBox e.Message
-		    return
-		  end try
-		  
-		  
-		  while DealPartnersNode.FirstChild <> nil
-		    var aNode as XmlNode = DealPartnersNode.FirstChild
-		    DealPartnersNode.RemoveChild(aNode)
-		  wend
-		  
-		  var rows as RowSet
-		  sql = "select * from DealPartners"
-		  
-		  
 		  
 		  self.Close
-		  
 		End Sub
 	#tag EndEvent
 #tag EndEvents

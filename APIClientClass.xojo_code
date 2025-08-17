@@ -1,6 +1,15 @@
 #tag Class
 Protected Class APIClientClass
 	#tag Method, Flags = &h0
+		Function AddDealPartner(name As String) As Dictionary
+		  // POST /api/v1/deal-partners
+		  var partnerData as new Dictionary
+		  partnerData.Value("name") = name
+		  return me.SendRequest("POST", "/api/v1/deal-partners", partnerData)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub BeginTransaction()
 		  
 		End Sub
@@ -123,6 +132,13 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function DeleteDealPartner(name as string) As Dictionary
+		  // DELETE /api/v1/deal-partners/:name
+		  return me.SendRequest("DELETE", "/api/v1/deal-partners/" + name)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function DeletePeriod(periodName as String) As Dictionary
 		  // DELETE /api/v1/periods/{period}
 		  var endpoint as String = "/api/v1/periods/" + periodName
@@ -139,6 +155,13 @@ Protected Class APIClientClass
 	#tag Method, Flags = &h0
 		Function GetDeal(dealNo As String) As Dictionary
 		  // GET /api/v1/deals/{dealNo}
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function GetDealPartners() As Dictionary
+		  // GET /api/v1/deal-partners
+		  return me.SendRequest("GET", "/api/v1/deal-partners")
 		End Function
 	#tag EndMethod
 
@@ -263,30 +286,30 @@ Protected Class APIClientClass
 
 	#tag Method, Flags = &h0
 		Function SearchDeals(period As String, searchKey As String, fromDate As String, toDate As String) As Dictionary
-		  // GET /api/v1/deals/search?period={period}&q={searchKey}&from={fromDate}&to={toDate}
+		  // GET /api/v1/deals?period={period}&keyword={searchKey}&from_date={fromDate}&to_date={toDate}
 		  // 戻り値: {"success": true, "deals": [array], "count": number}
 		  var params() As String
 		  params.Add("period=" + period)
 		  
 		  if searchKey <> "" then
-		    params.Add("q=" + searchKey)
+		    params.Add("keyword=" + searchKey)
 		  end if
 		  
 		  if fromDate <> "" then
-		    params.Add("from=" + fromDate)
+		    params.Add("from_date=" + fromDate)
 		  end if
 		  
 		  if toDate <> "" then
-		    params.Add("to=" + toDate)
+		    params.Add("to_date=" + toDate)
 		  end if
 		  
 		  var queryString As String = String.FromArray(params, "&")
-		  return me.SendRequest("GET", "/api/v1/deals/search?" + queryString)
+		  return me.SendRequest("GET", "/api/v1/deals?" + queryString)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function SelectSQL(sql As String, period As String) As RowSet
+		Function SelectSQL(period As String, sql As String) As RowSet
 		  // API経由でSQL実行: POST /api/v1/query
 		  
 		  var queryData as New Dictionary
@@ -499,6 +522,37 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function SystemSQL(tableName As String, sql As String) As RowSet
+		  // System.dbの指定テーブルに対するSQL実行
+		  var queryData as New Dictionary
+		  queryData.Value("database") = "System"
+		  queryData.Value("table") = tableName
+		  queryData.Value("query") = sql
+		  queryData.Value("limit") = 1000
+		  
+		  Try
+		    var result As Dictionary = me.SendRequest("POST", "/api/v1/system/sql", queryData)
+		    
+		    if result = nil or not result.HasKey("success") or not result.Value("success").BooleanValue then
+		      var errorMsg as String = "System DB query failed"
+		      if result <> nil and result.HasKey("message") then
+		        errorMsg = result.Value("message").StringValue
+		      end if
+		      me.LastError = errorMsg
+		      Raise New DatabaseException(errorMsg)
+		    end if
+		    
+		    // ここでRowSetオブジェクトを作成して返す必要があります
+		    // 実装はAPIサーバーからのレスポンス形式によります
+		    
+		  Catch error As RuntimeException
+		    me.LastError = error.Message
+		    Raise New DatabaseException("API request failed: " + error.Message)
+		  End
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function TestConnection() As Boolean
 		  // /api/v1/health
 		  // サーバーの生存確認
@@ -534,6 +588,15 @@ Protected Class APIClientClass
 		Sub UpdateDeal(dealNo As String, dealData As Dictionary)
 		  // PUT /api/v1/deals/{dealNo}
 		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function UpdateDealPartner(oldName As String, newName As String) As Dictionary
+		  // PUT /api/v1/deal-partners/:name
+		  var partnerData as new Dictionary
+		  partnerData.Value("name") = newName
+		  return me.SendRequest("PUT", "/api/v1/deal-partners/" + oldName, partnerData)
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
