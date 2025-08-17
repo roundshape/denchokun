@@ -89,7 +89,7 @@ Begin DesktopWindow DealPartnersMasterWindow
       Hint            =   ""
       Index           =   -2147483648
       Italic          =   False
-      Left            =   44
+      Left            =   66
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
@@ -111,7 +111,7 @@ Begin DesktopWindow DealPartnersMasterWindow
       Underline       =   False
       ValidationMask  =   ""
       Visible         =   True
-      Width           =   205
+      Width           =   183
    End
    Begin DesktopButton AddButton
       AllowAutoDeactivate=   True
@@ -347,37 +347,64 @@ Begin DesktopWindow DealPartnersMasterWindow
       Visible         =   True
       Width           =   60
    End
+   Begin DesktopButton DealPartnerButton
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "V"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   22
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   41
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   8
+      TabPanelIndex   =   0
+      TabStop         =   False
+      Tooltip         =   ""
+      Top             =   11
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   22
+   End
 End
 #tag EndDesktopWindow
 
 #tag WindowCode
 	#tag Event
-		Sub Closing()
-		  var sql as string = "drop table TempTable"
-		  try
-		    App.InMDB.ExecuteSQL(sql)
-		  catch e as DatabaseException
-		    MessageBox e.Message
-		    return
-		  end try
-		End Sub
-	#tag EndEvent
-
-	#tag Event
 		Sub Opening()
-		  // サーバーから最新データを取得してIn Memory DB更新
-		  App.LoadDealPartnersToInMemoryDB()
-		  
-		  // 既存のTempTable作成処理
-		  var sql as string = "CREATE TABLE TempTable AS SELECT * FROM DealPartners"
+		  self.WinName = "DealPartnersMasterWindow"
+		  // TempTable作成
 		  try
-		    App.InMDB.ExecuteSQL(sql)
+		    App.InMDB.CreateTempTable()
+		    App.LoadDealPartnersToInMemoryDB(App.InMDB)
+		    
 		  catch e as DatabaseException
 		    MessageBox e.Message
 		    return
 		  end try
 		  
-		  
+		  // TempTableのデータを画面のリストに表示
+		  try
+		    var tempData() as String = App.InMDB.GetTempTableData()
+		    self.PartnersList.RemoveAllRows
+		    for each partner as String in tempData
+		      self.PartnersList.AddRow partner
+		    next
+		  catch e as DatabaseException
+		    MessageBox "データ表示エラー: " + e.Message
+		  end try
 		End Sub
 	#tag EndEvent
 
@@ -508,6 +535,11 @@ End
 	#tag EndMethod
 
 
+	#tag Property, Flags = &h0
+		WinName As String
+	#tag EndProperty
+
+
 #tag EndWindowCode
 
 #tag Events PartnerNameField
@@ -518,11 +550,6 @@ End
 		  end if
 		  return true
 		End Function
-	#tag EndEvent
-	#tag Event
-		Sub TextChanged()
-		  var ret as string = me.TextChangedByControlKey(self.PartnersList, "TempTable")
-		End Sub
 	#tag EndEvent
 	#tag Event
 		Sub FocusReceived()
@@ -592,10 +619,7 @@ End
 		  // 2. In Memory DBのTempTableから現在の編集データを取得
 		  var tempPartners() as String
 		  try
-		    var rowsTemp as RowSet = App.InMDB.SelectSQL("", "SELECT name FROM TempTable")
-		    For Each row As DatabaseRow In rowsTemp
-		      tempPartners.Add(row.Column("name").StringValue)
-		    next
+		    tempPartners = App.InMDB.GetTempTableData()
 		  catch e as DatabaseException
 		    MessageBox "作業データの読み込みエラー: " + e.Message
 		    return
@@ -624,15 +648,6 @@ End
 		      end if
 		    end if
 		  next
-		  
-		  // 5. 成功したらIn Memory DBのDealPartnersテーブルを更新
-		  try
-		    App.InMDB.ExecuteSQL("DROP TABLE IF EXISTS DealPartners")
-		    App.InMDB.ExecuteSQL("CREATE TABLE DealPartners AS SELECT * FROM TempTable")
-		  catch e as DatabaseException
-		    MessageBox e.Message
-		    return
-		  end try
 		  
 		  self.Close
 		End Sub
@@ -689,6 +704,27 @@ End
 	#tag Event
 		Sub Pressed()
 		  self.Close
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events DealPartnerButton
+	#tag Event
+		Sub Pressed()
+		  var screenWidth as integer = DesktopDisplay.DisplayAt(0).Width
+		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
+		  
+		  var win as new PopupInMDBWindow("取引先の入力", nil, self)
+		  var screenWinLeft as integer = self.Left+self.PartnerNameField.Left
+		  var screenWinTop as integer = 30+self.Top+self.PartnerNameField.Top+self.PartnerNameField.Height //30 is windows title
+		  if screenWinTop+win.Height <= screenHeight then
+		    win.Top = screenWinTop
+		  else
+		    win.Top = screenWinTop-win.Height-self.PartnerNameField.Height-30
+		  end if
+		  win.Left = screenWinLeft
+		  win.InputText.Text = self.PartnerNameField.Text //Kicks off TextChanged event
+		  win.ShowModal(self)
+		  //self.PartnerNameField.Text = win.SelectedValue
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -926,6 +962,14 @@ End
 		Group="Deprecated"
 		InitialValue="False"
 		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="WinName"
+		Visible=false
+		Group="Behavior"
+		InitialValue=""
+		Type="String"
 		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

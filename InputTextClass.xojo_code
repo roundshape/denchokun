@@ -9,10 +9,24 @@ Inherits DesktopTextField
 		  
 		  var sql as string
 		  if inputKey = "" then
-		    sql = "select name from "+table
+		    sql = "select name from "+table+" ORDER BY name"
 		  else
-		    sql = "select name from "+table+" where name like '%"+inputKey+"%'"
+		    sql = "select name from "+table+" where name like '%"+EncodeSqlString(inputKey)+"%' ORDER BY name"
 		  end if
+		  
+		  // App.InMDBのnilチェック
+		  if App.InMDB = nil then
+		    return "InMDB is nil"
+		  end if
+		  
+		  try
+		    var rows as RowSet = App.InMDB.SelectSQL(sql)
+		    For Each row As DatabaseRow In rows
+		      list.AddRow row.Column("name").StringValue
+		    next
+		  catch e as DatabaseException
+		    return "Database Error: " + e.Message
+		  end try
 		  
 		  return "OK"
 		End Function

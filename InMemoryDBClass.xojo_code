@@ -1,32 +1,21 @@
 #tag Class
 Protected Class InMemoryDBClass
-Inherits Database
+Inherits SQLiteDatabase
 	#tag Method, Flags = &h0
 		Sub AddDealPartner(name As String)
-		  var sql As String = "INSERT INTO DealPartners (name) VALUES (?)"
-		  var ps As PreparedStatement = me.Prepare(sql)
-		  ps.BindType(0, SQLiteTypeMapping.SQLITE_TEXT)
+		  var sql As String = "INSERT INTO TempTable (name) VALUES (?)"
+		  var ps as SQLitePreparedStatement = me.Prepare(sql)
+		  ps.BindType(0, SQLitePreparedStatement.SQLITE_TEXT)
 		  ps.Bind(0, name)
 		  ps.ExecuteSQL()
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ApplyTempTableToMain()
-		  try
-		    me.ExecuteSQL("DROP TABLE IF EXISTS DealPartners")
-		    me.ExecuteSQL("CREATE TABLE DealPartners AS SELECT * FROM TempTable")
-		    me.ExecuteSQL("DROP TABLE TempTable")
-		  catch e as DatabaseException
-		    Raise e
-		  end try
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub Constructor()
 		  Super.Constructor
-		  me.DatabaseFile = Nil
+		  Super.Constructor
+		  // DatabaseFile を設定しない（Nilのまま）でConnectするとIn-memoryになる
 		  me.Connect()
 		  me.CreateTables()
 		End Sub
@@ -46,11 +35,10 @@ Inherits Database
 	#tag Method, Flags = &h0
 		Sub CreateTempTable()
 		  try
-		    me.ExecuteSQL("DROP TABLE IF EXISTS TempTable")
-		    me.ExecuteSQL("CREATE TABLE TempTable AS SELECT * FROM DealPartners")
+		    me.ExecuteSQL("CREATE TABLE IF NOT EXISTS TempTable (name TEXT PRIMARY KEY)")
 		  catch e as DatabaseException
 		    Raise e
-		  end try
+		  end
 		End Sub
 	#tag EndMethod
 
@@ -68,10 +56,10 @@ Inherits Database
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RemoveDealPartner()
+		Sub RemoveDealPartner(name as string)
 		  var sql As String = "DELETE FROM DealPartners WHERE name = ?"
-		  var ps As PreparedStatement = me.Prepare(sql)
-		  ps.BindType(0, SQLiteTypeMapping.SQLITE_TEXT)
+		  var ps As SQLitePreparedStatement = me.Prepare(sql)
+		  ps.BindType(0, SQLitePreparedStatement.SQLITE_TEXT)
 		  ps.Bind(0, name)
 		  ps.ExecuteSQL()
 		End Sub
@@ -84,5 +72,135 @@ Inherits Database
 	#tag EndMethod
 
 
+	#tag ViewBehavior
+		#tag ViewProperty
+			Name="DatabaseName"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Host"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Password"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="UserName"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Name"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Index"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Super"
+			Visible=true
+			Group="ID"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Left"
+			Visible=true
+			Group="Position"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Top"
+			Visible=true
+			Group="Position"
+			InitialValue=""
+			Type="Integer"
+			EditorType=""
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="EncryptionKey"
+			Visible=true
+			Group=""
+			InitialValue=""
+			Type="String"
+			EditorType="String"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="Timeout"
+			Visible=true
+			Group=""
+			InitialValue=""
+			Type="Double"
+			EditorType="Double"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="DebugMode"
+			Visible=true
+			Group=""
+			InitialValue=""
+			Type="Boolean"
+			EditorType="Boolean"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="ThreadYieldInterval"
+			Visible=true
+			Group=""
+			InitialValue=""
+			Type="Integer"
+			EditorType="Integer"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="WriteAheadLogging"
+			Visible=true
+			Group=""
+			InitialValue=""
+			Type="Boolean"
+			EditorType="Boolean"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="LoadExtensions"
+			Visible=true
+			Group=""
+			InitialValue=""
+			Type="Boolean"
+			EditorType="Boolean"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="LibraryVersion"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType=""
+		#tag EndViewProperty
+	#tag EndViewBehavior
 End Class
 #tag EndClass

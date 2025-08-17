@@ -283,54 +283,17 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function CreateInMDB() As APICLientClass
-		  var dbNode as XmlNode = App.XmlPref.GetNode("InMDB")
-		  if dbNode = nil then
-		    return nil
-		  end if
-		  
-		  var apiClient as New APICLientClass
+		Function CreateInMDB() As InMemoryDBClass
+		  App.InMDB = New InMemoryDBClass
+		  App.InMDB.CreateTempTable()
+		  // サーバーから取引先データを取得してIn Memory DBに読み込み
 		  try
-		    apiClient.Connect
-		  Catch e as DatabaseException
-		    return nil
+		    me.LoadDealPartnersToInMemoryDB(App.InMDB)
+		  catch e as RuntimeException
+		    // 接続失敗時は空のIn Memory DBを返す
 		  end try
 		  
-		  var DealPartnersNode as XmlNode = dbNode.FirstChild //<DealPartners>
-		  while DealPartnersNode.Name <> "DealPartners"
-		    DealPartnersNode = DealPartnersNode.NextSibling
-		  wend
-		  if DealPartnersNode = nil then
-		    apiClient.Close
-		    return nil
-		  end if
-		  
-		  try
-		    apiClient.ExecuteSQL("CREATE TABLE DealPartners(name TEXT PRIMARY KEY)")
-		  Catch e as DatabaseException
-		    apiClient.Close
-		    return nil
-		  end try
-		  
-		  
-		  var PartnerNode as XmlNode = DealPartnersNode.FirstChild
-		  if PartnerNode <> nil then
-		    while PartnerNode <> nil
-		      if PartnerNode.FirstChild <> nil then
-		        try
-		          Var name As string = PartnerNode.FirstChild.Value
-		          var sql as string = "insert into DealPartners(name) values('"+EncodeSqlString(name)+"')"
-		          apiClient.ExecuteSQL(sql)
-		        Catch e as DatabaseException
-		          me.InMDB.Close
-		          return nil
-		        end try
-		      end if
-		      PartnerNode = PartnerNode.NextSibling
-		    wend
-		  end if
-		  
-		  return apiClient
+		  return App.InMDB
 		End Function
 	#tag EndMethod
 
@@ -1088,23 +1051,25 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub LoadDealPartnersToInMemoryDB()
+		Sub LoadDealPartnersToInMemoryDB(inMDB as InMemoryDBClass)
 		  var apiClient as new APIClientClass
 		  apiClient.BaseURL = me.GetAPIServerURL()
 		  
 		  try
 		    var result as Dictionary = apiClient.GetDealPartners()
 		    if result.HasKey("success") and result.Value("success").BooleanValue then
-		      // In Memory DBのDealPartnersテーブルを更新
-		      me.InMDB.ExecuteSQL("DELETE FROM DealPartners")
+		      if inMDB = nil then
+		        return
+		      end if
+		      // In Memory DBのTempTableテーブルを更新
+		      inMDB.ExecuteSQL("DELETE FROM TempTable")
 		      
 		      if result.HasKey("partners") then
 		        var partnersArray as Variant = result.Value("partners")
 		        if partnersArray.IsArray then
 		          var partners() as Variant = partnersArray
 		          for each partner as Variant in partners
-		            var sql as String = "INSERT INTO DealPartners (name) VALUES ('" + EncodeSqlString(partner.StringValue) + "')"
-		            me.InMDB.ExecuteSQL(sql)
+		            inMDB.AddDealPartner(partner.StringValue)
 		          next
 		        end if
 		      end if
@@ -1309,7 +1274,7 @@ Inherits DesktopApplication
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		InMDB As APICLientClass
+		InMDB As InMemoryDBClass
 	#tag EndProperty
 
 	#tag Property, Flags = &h0

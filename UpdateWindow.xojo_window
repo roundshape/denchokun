@@ -1466,7 +1466,7 @@ End
 		  var screenWidth as integer = DesktopDisplay.DisplayAt(0).Width
 		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
 		  
-		  var win as new PopupInMDBWindow("取引先の入力")
+		  var win as new PopupInMDBWindow("取引先の入力", nil, nil)
 		  //win.UpdateWin = self
 		  var screenWinLeft as integer = self.Left+self.DealingPartnerField.Left
 		  var screenWinTop as integer = 30+self.Top+self.DealingPartnerField.Top+self.DealingPartnerField.Height //30 is windows title

@@ -1238,7 +1238,7 @@ End
 		    end if
 		    return true //avoid '#' since # is added after SelectedText
 		  elseif key = "@" then
-		    var win as new PopupInMDBWindow("取引先の入力")
+		    var win as new PopupInMDBWindow("取引先の入力", nil, nil)
 		    if screenWinTop+win.Height <= screenHeight then
 		      win.Top = screenWinTop
 		    else

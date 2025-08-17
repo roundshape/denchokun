@@ -106,12 +106,12 @@ Begin DesktopWindow PopupInMDBWindow
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   4
+      Top             =   2
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
       Visible         =   True
-      Width           =   178
+      Width           =   177
    End
    Begin DesktopButton CloseButton
       AllowAutoDeactivate=   True
@@ -169,7 +169,7 @@ Begin DesktopWindow PopupInMDBWindow
       TabPanelIndex   =   0
       TabStop         =   False
       Tooltip         =   ""
-      Top             =   3
+      Top             =   2
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -179,14 +179,52 @@ End
 #tag EndDesktopWindow
 
 #tag WindowCode
+	#tag Event
+		Sub Opening()
+		  // App.InMDBのnilチェック
+		  if App.InMDB = nil then
+		    MessageBox "In Memory データベースが初期化されていません"
+		    self.Close
+		    return
+		  end if
+		  
+		  // In Memory DBのDealPartnersテーブルから全データを読み込んでリストに表示
+		  try
+		    var rows as RowSet = App.InMDB.SelectSQL("SELECT name FROM TempTable ORDER BY name")
+		    self.TextList.RemoveAllRows
+		    For Each row As DatabaseRow In rows
+		      self.TextList.AddRow row.Column("name").StringValue
+		    next
+		  catch e as DatabaseException
+		    // エラーの場合は空のリストを表示
+		    MessageBox "データ取得エラー: " + e.Message
+		    self.TextList.RemoveAllRows
+		  end try
+		  
+		  // InputTextにフォーカスを設定
+		  self.InputText.SetFocus
+		End Sub
+	#tag EndEvent
+
+
 	#tag Method, Flags = &h0
-		Sub Constructor(t as string)
+		Sub Constructor(t as string, callingMainWin as MainWindow, callingDealPartnersMasterWin as DealPartnersMasterWindow)
 		  // Calling the overridden superclass constructor.
 		  Super.Constructor
 		  self.Title = t
+		  self.callingMainWin = callingMainWin
+		  self.callingDealPartnersMasterWin = callingDealPartnersMasterWin
 		End Sub
 	#tag EndMethod
 
+
+	#tag Property, Flags = &h0
+		callingDealPartnersMasterWin As DealPartnersMasterWindow = nil
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		callingMainWin As MainWindow = nil
+	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		SelectedValue As String
@@ -206,17 +244,28 @@ End
 		  self.Close
 		End Sub
 	#tag EndEvent
+	#tag Event
+		Function CellPressed(row As Integer, column As Integer, x As Integer, y As Integer) As Boolean
+		  self.InputText.Text = me.CellTextAt(row, column)
+		End Function
+	#tag EndEvent
 #tag EndEvents
 #tag Events InputText
 	#tag Event
 		Sub TextChanged()
-		  var ret as string = me.TextChangedByControlKey(self.TextList, "DealPartners")
+		  var ret as string = me.TextChangedByControlKey(self.TextList, "TempTable")
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events CloseButton
 	#tag Event
 		Sub Pressed()
+		  if self.callingMainWin <> nil then
+		    self.callingMainWin.DealingPartnerField.Text = self.InputText.Text
+		  elseif self.callingDealPartnersMasterWin <>  nil then
+		    self.callingDealPartnersMasterWin.PartnerNameField.Text =  self.InputText.Text
+		  end if
+		  
 		  self.Close
 		End Sub
 	#tag EndEvent
@@ -463,13 +512,5 @@ End
 		InitialValue="False"
 		Type="Boolean"
 		EditorType=""
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="SelectedValue"
-		Visible=false
-		Group="Behavior"
-		InitialValue=""
-		Type="String"
-		EditorType="MultiLineEditor"
 	#tag EndViewProperty
 #tag EndViewBehavior

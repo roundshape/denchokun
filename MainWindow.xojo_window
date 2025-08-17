@@ -1326,6 +1326,10 @@ End
 		LastRegData As LastRegDataClass
 	#tag EndProperty
 
+	#tag Property, Flags = &h0
+		WinName As String = "nil"
+	#tag EndProperty
+
 
 #tag EndWindowCode
 
@@ -1791,7 +1795,7 @@ End
 		  var screenWidth as integer = DesktopDisplay.DisplayAt(0).Width
 		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
 		  
-		  var win as new PopupInMDBWindow("取引先の入力")
+		  var win as new PopupInMDBWindow("取引先の入力", self, nil)
 		  var screenWinLeft as integer = self.Left+self.DealingPartnerField.Left
 		  var screenWinTop as integer = 30+self.Top+self.DealingPartnerField.Top+self.DealingPartnerField.Height //30 is windows title
 		  if screenWinTop+win.Height <= screenHeight then
@@ -1801,8 +1805,8 @@ End
 		  end if
 		  win.Left = screenWinLeft
 		  win.InputText.Text = self.DealingPartnerField.Text //Kicks off TextChanged event
-		  win.ShowModal
-		  self.DealingPartnerField.Text = win.SelectedValue
+		  win.ShowModal(self)
+		  
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -2050,6 +2054,14 @@ End
 		Group="Deprecated"
 		InitialValue="False"
 		Type="Boolean"
+		EditorType=""
+	#tag EndViewProperty
+	#tag ViewProperty
+		Name="WinName"
+		Visible=false
+		Group="Behavior"
+		InitialValue="nil"
+		Type="String"
 		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior
