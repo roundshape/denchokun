@@ -13,52 +13,6 @@ Inherits XmlDocument
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetBoolAtrribute(nodename as string, attrname as string) As Boolean
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      if child.GetAttribute( attrname ) = "true" then
-		        return true
-		      else
-		        return false
-		      end if
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return false
-		  Exception errXml as XmlException
-		    return false
-		  Exception errRun as RuntimeException
-		    return false
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetIntAttribute(nodename as string, attrname as string) As integer
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      return val(child.GetAttribute( attrname ))
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return 0
-		  Exception errXml as XmlException
-		    return 0
-		  Exception errRun as RuntimeException
-		    return 0
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function GetMBSLicense() As Dictionary
 		  var mbsNode as XmlNode = me.GetNode("MBSLicense")
 		  if mbsNode = nil then
@@ -100,59 +54,9 @@ Inherits XmlDocument
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetNodeAttribute(nodename as string, attrname as string) As String
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      return child.GetAttribute( attrname )
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return ""
-		  Exception err as XmlException
-		    return ""
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetPeiodFromDateToDate(PeriodName as string) As FromDateToDateClass
-		  var baseNode as XmlNode = me.GetNode("BaseFolder")
-		  if baseNode = nil then
-		    return nil
-		  end if
-		  
-		  var fromDateLimit as string = "未設定"
-		  var toDateLimit as string = "未設定"
-		  var periodNode as XmlNode = baseNode.FirstChild
-		  if periodNode <> nil then // No Period
-		    while periodNode <> nil
-		      if periodNode.FirstChild = nil then
-		        return nil
-		      end if
-		      var name as string = periodNode.FirstChild.Value
-		      if name = PeriodName then
-		        exit
-		      end if
-		      periodNode = periodNode.NextSibling
-		    wend
-		    fromDateLimit = periodNode.GetAttribute("FromDate")
-		    toDateLimit = periodNode.GetAttribute("ToDate")
-		  end if
-		  var ret as new FromDateToDateClass
-		  ret.FromDate = fromDateLimit
-		  ret.ToDate = toDateLimit
-		  return ret
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function InitializeByDefaultSetting() As integer
-		  var root, node, oldnode as XmlNode
-		  var elem, oldelem as XmlElement
+		  var root, node as XmlNode
+		  var elem as XmlElement
 		  
 		  root = me.FirstChild
 		  
@@ -181,29 +85,9 @@ Inherits XmlDocument
 		  elem.SetAttribute( "SearchOrder", "asc")
 		  node = root.AppendChild(elem)
 		  
-		  
-		  Var myHomeF As FolderItem
-		  myHomeF = SpecialFolder.UserHome
-		  If myHomeF = Nil Then
-		    myHomeF = FolderItem.DriveAt(0)
-		    if myHomeF = nil then
-		      Var dlg As New SelectFolderDialog
-		      dlg.ActionButtonCaption = "初期ォルダ選択"
-		      dlg.Title = "初期フォルダ選択"
-		      dlg.PromptText = "初期フォルダを選択してください"
-		      //dlg.InitialFolder = SpecialFolder.Documents
-		      myHomeF = dlg.ShowModal
-		      If myHomeF = Nil Then
-		        MessageBox("初期フォルダが設定できません")
-		        return -1
-		      End If
-		    End If
-		  end if
-		  
-		  elem = me.CreateElement("BaseFolder")
-		  var basePath as string = myHomeF.NativePath
-		  elem.SetAttribute( "path", basePath )
-		  elem.SetAttribute( "workingPeriod", "" )
+		  elem = me.CreateElement("APIServer")
+		  elem.SetAttribute( "url", "http://localhost:8080" )
+		  elem.SetAttribute( "CurrentPeriod", "" )
 		  node = root.AppendChild( elem )
 		  
 		  elem = me.CreateElement("InputLimit")
@@ -212,8 +96,6 @@ Inherits XmlDocument
 		  elem.SetAttribute( "partnerbytes", "80" )
 		  elem.SetAttribute( "remarkbytes", "80" )
 		  node = root.AppendChild( elem )
-		  
-		  var ret as Integer = me.InitializeUpdatedItemsByDefaults(root, nil)
 		  
 		  elem = me.CreateElement("DocType")
 		  node = root.AppendChild(elem)
@@ -240,82 +122,47 @@ Inherits XmlDocument
 		  typeNode = node.AppendChild(App.XmlPref.CreateElement("Type"))
 		  typeNode.AppendChild(xt)
 		  
-		  elem = me.CreateElement("InMDB")
-		  node = root.AppendChild(elem)
-		  elem = me.CreateElement("DealPartners")
-		  var dealPartnersNode as XmlNode = node.AppendChild(elem)
-		  
 		  return 0
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InitializeUpdatedItemsByDefaults(root as XmlNode, beforeNode as XmlNode = nil) As integer
-		  var node as XmlNode
-		  
-		  
-		  if beforeNode = nil then
-		    var ocrNode as XmlNode = me.CreateElement("OCR")
-		    var ocrSetupNode as XmlNode = me.CreateElement("Setup")
-		    ocrSetupNode.SetAttribute("workingDirectory","C:\Program Files\Tesseract-OCR")
-		    ocrSetupNode.SetAttribute("processLib","liblept-5.dll")
-		    ocrSetupNode.SetAttribute("mainLib","libtesseract-5.dll")
-		    ocrSetupNode.SetAttribute("tessdata","C:\Program Files\Tesseract-OCR\tessdata")
-		    ocrSetupNode.SetAttribute("languages","eng+jpn")
-		    node = ocrNode.AppendChild(ocrSetupNode)
-		    var ocrOutputNode as XmlNode = me.CreateElement("Output")
-		    ocrOutputNode.SetAttribute( "filename", "OCRout.txt" )
-		    ocrOutputNode.SetAttribute( "encoding", "UTF8" )
-		    node = ocrNode.AppendChild(ocrOutputNode)
-		    node = root.AppendChild(ocrNode)
-		    
-		    // TimeStamp node removed
-		  else
-		    node = me.GetNode("OCR")
-		    if node = nil then //Set defaults
-		      var ocrNode as XmlNode = me.CreateElement("OCR")
-		      node = root.AppendChild(ocrNode)
-		      var ocrSetupNode as XmlNode = me.CreateElement("Setup")
-		      ocrSetupNode.SetAttribute("workingDirectory","C:\Program Files\Tesseract-OCR")
-		      ocrSetupNode.SetAttribute("processLib","liblept-5.dll")
-		      ocrSetupNode.SetAttribute("mainLib","libtesseract-5.dll")
-		      ocrSetupNode.SetAttribute("tessdata","C:\Program Files\Tesseract-OCR\tessdata")
-		      ocrSetupNode.SetAttribute("languages","eng+jpn")
-		      node = ocrNode.AppendChild(ocrSetupNode)
-		      var ocrOutputNode as XmlNode = me.CreateElement("Output")
-		      ocrOutputNode.SetAttribute( "filename", "OCRout.txt" )
-		      ocrOutputNode.SetAttribute( "encoding", "UTF8" )
-		      node = ocrNode.AppendChild(ocrOutputNode)
-		      node = root.Insert(ocrNode,beforeNode)
-		    end if
+		Function InitializeOCR(afterNode as XmlNode) As integer
+		  // OCRノードが既に存在するかチェック
+		  var existingOCR as XmlNode = me.GetNode("OCR")
+		  if existingOCR <> nil then
+		    return 0  // 既に存在する場合は何もしない
 		  end if
 		  
+		  // OCRノード作成
+		  var ocrNode as XmlNode = me.CreateElement("OCR")
 		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function InsertNode(nodename as string) As xmlnode
-		  var root, child as XmlNode
-		  var childname as string
-		  root = me.FirstChild // root
-		  child = root.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      return child
-		    end if
-		    child = child.NextSibling
-		  wend
+		  // Setupノード作成
+		  var ocrSetupNode as XmlNode = me.CreateElement("Setup")
+		  ocrSetupNode.SetAttribute("workingDirectory","C:\Program Files\Tesseract-OCR")
+		  ocrSetupNode.SetAttribute("processLib","liblept-5.dll")
+		  ocrSetupNode.SetAttribute("mainLib","libtesseract-5.dll")
+		  ocrSetupNode.SetAttribute("tessdata","C:\Program Files\Tesseract-OCR\tessdata")
+		  ocrSetupNode.SetAttribute("languages","eng+jpn")
+		  var node as XmlNode = ocrNode.AppendChild(ocrSetupNode)
 		  
-		  var elem as XmlElement
-		  elem = me.CreateElement(nodename)
-		  child = root.AppendChild(elem)
-		  return child
-		  Exception errXml as XmlException
-		    return nil
-		  Exception errRun as RuntimeException
-		    return nil
+		  // Outputノード作成
+		  var ocrOutputNode as XmlNode = me.CreateElement("Output")
+		  ocrOutputNode.SetAttribute("filename", "OCRout.txt")
+		  ocrOutputNode.SetAttribute("encoding", "UTF8")
+		  node = ocrNode.AppendChild(ocrOutputNode)
+		  
+		  // afterNodeの次に挿入
+		  var nextNode as XmlNode = afterNode.NextSibling
+		  if nextNode = nil then
+		    // afterNodeが最後の要素の場合は末尾に追加
+		    node = afterNode.Parent.AppendChild(ocrNode)
+		  else
+		    // afterNodeの次の位置に挿入
+		    node = afterNode.Parent.Insert(ocrNode, nextNode)
+		  end if
+		  
+		  return 0
 		End Function
 	#tag EndMethod
 
@@ -332,7 +179,6 @@ Inherits XmlDocument
 		  var ret as integer = 0
 		  var fp as TextOutputStream
 		  var root as XmlNode
-		  var node as XmlNode
 		  var elem as XmlElement
 		  if not pref.exists then
 		    App.firstBoot = true
@@ -357,8 +203,8 @@ Inherits XmlDocument
 		      
 		      // From here, set default values of updated versions above 1-0-1
 		      //OCR
-		      var beforeNode as XmlNode = me.GetNode("DocType")
-		      ret = me.InitializeUpdatedItemsByDefaults(root, beforeNode)
+		      var inputLimitNode as XmlNode = me.GetNode("InputLimit")
+		      ret = me.InitializeOCR(inputLimitNode)
 		      if ret < 0 then
 		        return ret
 		      end if
@@ -409,91 +255,6 @@ Inherits XmlDocument
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub SetBoolAttribute(nodename as string, attrname as string, value as boolean)
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      if value then
-		        child.SetAttribute( attrname, "true" )
-		      else
-		        child.SetAttribute( attrname, "false" )
-		      end if
-		      return
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return
-		  Exception errXml as XmlException
-		    return
-		  Exception errRun as RuntimeException
-		    return
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub SetIntAttribute(nodename as string, attrname as string, value as integer)
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      child.SetAttribute( attrname, str(value) )
-		      return
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return
-		  Exception errXml as XmlException
-		    return
-		  Exception errRun as RuntimeException
-		    return
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub SetInternetServer(url as string, newaccount as string, newpassword as string)
-		  var child as XmlNode
-		  var elem as XmlElement
-		  var InternetServerListFound as boolean
-		  InternetServerListFound = false
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    if child.Name = "InternetServerList" then
-		      InternetServerListFound = true
-		      exit
-		    end if
-		    child = child.NextSibling
-		  wend
-		  if not InternetServerListFound then
-		    return
-		  end if
-		  var Interneturl as string
-		  child = child.FirstChild
-		  while child <> nil
-		    Interneturl = child.GetAttribute( "url" )
-		    if Interneturl = url then
-		      elem.SetAttribute( "account", newaccount)
-		      elem.SetAttribute( "password", newpassword)
-		      return
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return
-		  Exception errXml as XmlException
-		    return
-		  Exception errRun as RuntimeException
-		    return
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub SetMBSLicense(name as string, product as string, yearMonth as string, serialKey as string)
 		  var root as XmlNode = me.FirstChild
 		  var mbsNode as XmlNode = me.GetNode("MBSLicense")
@@ -508,50 +269,6 @@ Inherits XmlDocument
 		  mbsNode.SetAttribute("Product", product)
 		  mbsNode.SetAttribute("YearMonth", yearMonth)
 		  mbsNode.SetAttribute("SerialKey", serialKey)
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub SetNodeAttribute(nodename as string, attrname as string, value as string)
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      child.SetAttribute( attrname, value )
-		      return
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return
-		  Exception errXml as XmlException
-		    return
-		  Exception errRun as RuntimeException
-		    return
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub SetStringAttribute(nodename as string, attrname as string, value as string)
-		  var child as XmlNode
-		  var childname as string
-		  child = me.FirstChild // root
-		  child = child.FirstChild
-		  while child <> nil
-		    childname = child.Name
-		    if childname = nodename then
-		      child.SetAttribute( attrname, value )
-		      return
-		    end if
-		    child = child.NextSibling
-		  wend
-		  return
-		  Exception errXml as XmlException
-		    return
-		  Exception errRun as RuntimeException
-		    return
 		End Sub
 	#tag EndMethod
 

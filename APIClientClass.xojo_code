@@ -2,10 +2,10 @@
 Protected Class APIClientClass
 	#tag Method, Flags = &h0
 		Function AddDealPartner(name As String) As Dictionary
-		  // POST /api/v1/deal-partners
+		  // POST /v1/api/deal-partners
 		  var partnerData as new Dictionary
 		  partnerData.Value("name") = name
-		  return me.SendRequest("POST", "/api/v1/deal-partners", partnerData)
+		  return me.SendRequest("POST", "/v1/api/deal-partners", partnerData)
 		End Function
 	#tag EndMethod
 
@@ -61,12 +61,6 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function BuildURL(endpoint As String) As String
-		  // BaseURL + endpoint の組み立て
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub Close()
 		  // スタブ実装 - API接続の場合は特に何もしない
 		  me.IsConnected = false
@@ -80,26 +74,21 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub Connect()
-		  // スタブ実装 - 後でAPI呼び出しに変更
-		  me.IsConnected = true
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function ConnectToPeriod(dealPeriod as String) As Boolean
-		  // /api/v1/periods/{dealPeriod}/connect
-		  // 指定期間のDBに接続（既存のConnectDBの代替）
-		  try
-		    var result as Dictionary = me.SendRequest("POST", "/api/v1/periods/" + dealPeriod + "/connect")
-		    if result <> nil and result.HasKey("success") then
-		      return result.Value("success").BooleanValue
-		    end if
-		  catch error as RuntimeException
-		    me.LastError = error.Message
-		  end try
+		Function ConnectToPeriod(dealPeriod as String) As Dictionary
+		  // POST /v1/api/periods/connect?period={period}
 		  
-		  return false
+		  // 期間名の検証
+		  if dealPeriod = "" or dealPeriod.Trim = "" then
+		    var result as new Dictionary
+		    result.Value("success") = false
+		    result.Value("message") = "期間名が空です"
+		    return result
+		  end if
+		  
+		  // URLエンコード処理
+		  var encodedPeriod as String = EncodeURLComponent(dealPeriod)
+		  var endpoint as String = "/v1/api/periods/connect?period=" + encodedPeriod
+		  return me.SendRequest("POST", endpoint)
 		End Function
 	#tag EndMethod
 
@@ -111,170 +100,321 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Function CreateEmptyRowSet() As RowSet
+		  // 空のRowSetを作成
+		  var tempDB as new SQLiteDatabase
+		  tempDB.Connect()  // メモリ内DB
+		  
+		  Try
+		    // 最低限のカラムを持つ空テーブルを作成
+		    tempDB.ExecuteSQL("CREATE TEMP TABLE empty_result (NO TEXT, DealDate TEXT, DealName TEXT, DealPartner TEXT, DealPrice TEXT, DealType TEXT, DealRemark TEXT, FilePath TEXT, RecStatus TEXT)")
+		    return tempDB.SelectSQL("SELECT * FROM empty_result WHERE 1=0")
+		  Catch error as DatabaseException
+		    // 最悪の場合、nullを返す（呼び出し側でnilチェックが必要）
+		    me.LastError = "Failed to create empty RowSet: " + error.Message
+		    return nil
+		  End Try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Function CreatePeriod(periodName As String) As Dictionary
-		  // POST /api/v1/periods
+		  // POST /v1/api/periods
 		  var periodData as new Dictionary
 		  periodData.Value("name") = periodName
 		  periodData.Value("fromDate") = "未設定"
 		  periodData.Value("toDate") = "未設定"
 		  
-		  var endpoint as String = "/api/v1/periods"
+		  var endpoint as String = "/v1/api/periods"
 		  return me.SendRequest("POST", endpoint, periodData)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function DeleteDeal(dealNo As String, reason As String) As Dictionary
-		  // DELETE /api/v1/deals/{dealNo}
-		  var endpoint as String = "/api/v1/deals/" + dealNo
-		  return me.SendRequest("DELETE", endpoint)
+		Function CreateRowSetFromAPIResponse(data As Variant) As RowSet
+		  // APIレスポンスからRowSetオブジェクトを作成
+		  
+		  if not data.IsArray then
+		    return CreateEmptyRowSet()
+		  end if
+		  
+		  var rows() as Variant = data
+		  if rows.Count = 0 then
+		    return CreateEmptyRowSet()
+		  end if
+		  
+		  // 一時的なIn-Memory SQLiteデータベースを作成
+		  var tempDB as new SQLiteDatabase
+		  tempDB.Connect()  // DatabaseFileが未設定なのでメモリ内DBになる
+		  
+		  // 最初の行からカラム情報を取得してテーブルを作成
+		  var firstRow as Dictionary = Dictionary(rows(0))
+		  var createSQL as String = "CREATE TEMP TABLE api_result ("
+		  var columnNames() as String
+		  
+		  for each key as Variant in firstRow.Keys
+		    columnNames.Add(key.StringValue)
+		    if createSQL <> "CREATE TEMP TABLE api_result (" then
+		      createSQL = createSQL + ", "
+		    end if
+		    createSQL = createSQL + "`" + key.StringValue + "` TEXT"
+		  next
+		  createSQL = createSQL + ")"
+		  
+		  Try
+		    tempDB.ExecuteSQL(createSQL)
+		    
+		    // データを挿入
+		    for each row as Variant in rows
+		      if row isa Dictionary then
+		        var rowDict as Dictionary = Dictionary(row)
+		        var insertSQL as String = "INSERT INTO api_result VALUES ("
+		        var values() as String
+		        
+		        for each columnName as String in columnNames
+		          if rowDict.HasKey(columnName) then
+		            // 文字列値をエスケープ
+		            var value as String = rowDict.Value(columnName).StringValue
+		            value = value.ReplaceAll("'", "''")  // SQLエスケープ
+		            values.Add("'" + value + "'")
+		          else
+		            values.Add("NULL")
+		          end if
+		        next
+		        
+		        insertSQL = insertSQL + String.FromArray(values, ", ") + ")"
+		        tempDB.ExecuteSQL(insertSQL)
+		      end if
+		    next
+		    
+		    // RowSetを取得して返す
+		    return tempDB.SelectSQL("SELECT * FROM api_result")
+		    
+		  Catch error as DatabaseException
+		    me.LastError = "Failed to create RowSet: " + error.Message
+		    return CreateEmptyRowSet()
+		  End Try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function DeleteDeal(period As String, dealNo As String, reason As String = "") As Dictionary
+		  // DELETE /v1/api/deals/{dealNo}?period={period}
+		  var encodedDealNo as String = EncodeURLComponent(dealNo)
+		  var encodedPeriod as String = EncodeURLComponent(period)
+		  var endpoint as String = "/v1/api/deals/" + encodedDealNo + "?period=" + encodedPeriod
+		  
+		  // 削除理由がある場合はリクエストボディに含める
+		  var requestData as Dictionary = nil
+		  if reason <> "" then
+		    requestData = new Dictionary
+		    requestData.Value("reason") = reason
+		  end if
+		  
+		  return me.SendRequest("DELETE", endpoint, requestData)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function DeleteDealPartner(name as string) As Dictionary
-		  // DELETE /api/v1/deal-partners/:name
-		  return me.SendRequest("DELETE", "/api/v1/deal-partners/" + name)
+		  // DELETE /v1/api/deal-partners/:name
+		  return me.SendRequest("DELETE", "/v1/api/deal-partners/" + name)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function DeletePeriod(periodName as String) As Dictionary
-		  // DELETE /api/v1/periods/{period}
-		  var endpoint as String = "/api/v1/periods/" + periodName
-		  return me.SendRequest("DELETE", endpoint)
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Sub ExecuteSQL(sql as string)
+		Function DownloadDealFile(period As String, dealNo As String) As MemoryBlock
+		  // GET /v1/api/deals/{dealNo}/file?period={period}
+		  var encodedDealNo as String = EncodeURLComponent(dealNo)
+		  var encodedPeriod as String = EncodeURLComponent(period)
+		  var endpoint as String = "/v1/api/deals/" + encodedDealNo + "/download?period=" + encodedPeriod
 		  
+		  try
+		    var url as String = me.BaseURL + endpoint
+		    var request as new URLConnection
+		    request.RequestHeader("User-Agent") = "Denchokun-Client/1.0"
+		    request.AllowCertificateValidation = false
+		    
+		    var response as String = request.SendSync("GET", url, me.TimeoutSeconds)
+		    
+		    // HTTPステータスコードをチェック
+		    if request.HTTPStatusCode = 200 then
+		      // レスポンスボディをMemoryBlockとして返す
+		      var responseData as MemoryBlock = response
+		      return responseData
+		    else
+		      me.LastError = "HTTP Error " + request.HTTPStatusCode.ToString
+		      if request.HTTPStatusCode = 404 then
+		        me.LastError = me.LastError + ": ファイルが見つかりません"
+		      elseif request.HTTPStatusCode = 403 then
+		        me.LastError = me.LastError + ": アクセス権限がありません"
+		      end if
+		      return nil
+		    end if
+		    
+		  catch error as RuntimeException
+		    me.LastError = "ダウンロードエラー: " + error.Message
+		    return nil
+		  end try
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub ExecuteSQL(period As String, sql As String)
+		  // API経由でSQL実行（INSERT/UPDATE/DELETE用）: POST /v1/api/execute
+		  
+		  var queryData as New Dictionary
+		  queryData.Value("period") = period
+		  queryData.Value("query") = sql
+		  
+		  Try
+		    var result As Dictionary = me.SendRequest("POST", "/v1/api/execute", queryData)
+		    
+		    if result = nil or not result.HasKey("success") or not result.Value("success").BooleanValue then
+		      var errorMsg as String = "SQL execution failed"
+		      if result <> nil and result.HasKey("message") then
+		        errorMsg = result.Value("message").StringValue
+		      end if
+		      me.LastError = errorMsg
+		      Raise New DatabaseException(errorMsg)
+		    end if
+		    
+		  Catch error As RuntimeException
+		    me.LastError = error.Message
+		    Raise New DatabaseException("API request failed: " + error.Message)
+		  End Try
 		End Sub
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetDeal(dealNo As String) As Dictionary
-		  // GET /api/v1/deals/{dealNo}
+		Function GetDealPartners() As Dictionary
+		  // GET /v1/api/deal-partners
+		  return me.SendRequest("GET", "/v1/api/deal-partners")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetDealPartners() As Dictionary
-		  // GET /api/v1/deal-partners
-		  return me.SendRequest("GET", "/api/v1/deal-partners")
+		Function GetDealPreview(period As String, dealId As String, width As Variant = Nil, height As Variant = Nil) As Dictionary
+		  // GET /v1/api/preview-link?period={period}&dealId={dealId}[&width={width}][&height={height}]
+		  var endpoint as String = "/v1/api/preview-link?period=" + period + "&dealId=" + dealId
+		  
+		  if width <> Nil then
+		    endpoint = endpoint + "&width=" + width.StringValue
+		  end if
+		  
+		  if height <> Nil then
+		    endpoint = endpoint + "&height=" + height.StringValue
+		  end if
+		  
+		  return me.SendRequest("GET", endpoint)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function GetDealPreviewIcon(period As String, dealId As String, width As Integer, height As Integer) As Dictionary
+		  // GET /v1/api/preview-link?period={period}&dealId={dealId}&width={width}&height={height}
+		  var endpoint as String = "/v1/api/preview-link?period=" + period + "&dealId=" + dealId + "&width=" + width.ToString + "&height=" + height.ToString
+		  return me.SendRequest("GET", endpoint)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function GetDealPreviewWithSize(period As String, dealId As String, width As Integer, height As Integer) As Dictionary
+		  // GET /v1/api/preview-link?period={period}&dealId={dealId}&width={width}&height={height}
+		  var endpoint as String = "/v1/api/preview-link?period=" + period + "&dealId=" + dealId + "&width=" + width.ToString + "&height=" + height.ToString
+		  return me.SendRequest("GET", endpoint)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function GetDealsByPeriod(period As String) As Dictionary
-		  // GET /api/v1/deals?period={period}
-		  return me.SendRequest("GET", "/api/v1/deals?period=" + period)
+		  // GET /v1/api/deals?period={period}
+		  return me.SendRequest("GET", "/v1/api/deals?period=" + period)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetPeriod(periodName As String) As Dictionary
-		  // GET /api/v1/periods/{periodName}
-		  var endpoint as String = "/api/v1/periods/" + periodName
+		Function GetPeriodInfo(periodName As String) As Dictionary
+		  // GET /v1/api/periodinfo?period={period}
+		  var endpoint as String = "/v1/api/periodinfo?period=" + periodName 
 		  return me.SendRequest("GET", endpoint)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function GetPeriods() As Dictionary
-		  // GET /api/v1/periods
-		  return me.SendRequest("GET", "/api/v1/periods")
+		  // GET /v1/api/periods
+		  return me.SendRequest("GET", "/v1/api/periods")
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function HandleHTTPError(statusCode As Integer, responseBody As String) As Dictionary
-		  // HTTPエラーの統一処理
+		Function GetPreviewDataFromURL(previewURL As String) As Dictionary
+		  var result as new Dictionary
+		  
+		  try
+		    var request as new URLConnection
+		    request.RequestHeader("User-Agent") = "Denchokun-Client/1.0"
+		    request.AllowCertificateValidation = false
+		    
+		    var response as String = request.SendSync("GET", previewURL, me.TimeoutSeconds)
+		    var httpStatus as Integer = request.HTTPStatusCode
+		    
+		    // HTTPステータスコードを必ず返す
+		    result.Value("httpStatusCode") = httpStatus
+		    
+		    if httpStatus = 200 then
+		      result.Value("success") = true
+		      result.Value("binaryData") = response
+		    else
+		      result.Value("success") = false
+		      result.Value("message") = "HTTP Error " + httpStatus.ToString
+		    end if
+		    
+		  catch error as RuntimeException
+		    result.Value("success") = false
+		    result.Value("httpStatusCode") = 0
+		    result.Value("message") = "プレビューデータ取得エラー: " + error.Message
+		  end try
+		  
+		  return result
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function InsertDeal(dealData as Dictionary) As Dictionary
-		  var endpoint as String = "/api/v1/deals"
+		  var endpoint as String = "/v1/api/deals"
 		  var result as Dictionary = me.SendRequest("POST", endpoint, dealData)
 		  return result
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InsertDealWithFile(period As String, dealData As Dictionary, fileData As MemoryBlock, fileName As String) As Dictionary
-		  // 1. dealDataにperiodを追加
-		  dealData.Value("period") = period
+		Function InsertDealWithFile(period As String, dealData As Dictionary, fileData As MemoryBlock, fileName As String, force As Boolean = False) As Dictionary
+		  // POST /v1/api/deals?period={period} (force対応版)
+		  var endpoint as String = "/v1/api/deals?period=" + EncodeURLComponent(period)
 		  
-		  // 2. multipartリクエストを送信
-		  return me.SendMultipartRequest("POST", "/api/v1/deals", dealData, fileData, fileName)
+		  // force=trueの場合はクエリパラメータを追加
+		  if force then
+		    endpoint = endpoint + "&force=true"
+		  end if
+		  
+		  // 既存のSendMultipartRequestを使用
+		  return me.SendMultipartRequest("POST", endpoint, dealData, fileData, fileName)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function ProcessFileForAPI(dropF as FolderItem, basePath as String, period as String) As Dictionary
-		  var fileData as new Dictionary
+		Function MoveDealToOtherPeriod(dealId As String, fromPeriod As String, toPeriod As String) As Dictionary
+		  // PUT /v1/api/deals/{dealId}/to-otherperiod
+		  var encodedDealId as String = EncodeURLComponent(dealId)
+		  var endpoint as String = "/v1/api/deals/" + encodedDealId + "/to-otherperiod"
 		  
-		  if dropF = nil then
-		    return fileData
-		  end if
+		  var requestData as new Dictionary
+		  requestData.Value("fromPeriod") = fromPeriod
+		  requestData.Value("toPeriod") = toPeriod
 		  
-		  // ファイル情報を収集
-		  fileData.Value("fileName") = dropF.Name
-		  fileData.Value("filePath") = dropF.NativePath
-		  fileData.Value("isFolder") = dropF.IsFolder
-		  
-		  if dropF.Exists then
-		    fileData.Value("fileSize") = dropF.Length
-		  else
-		    fileData.Value("fileSize") = 0
-		  end if
-		  
-		  // ハッシュ値計算
-		  if not dropF.IsFolder and dropF.Exists then
-		    fileData.Value("hash") = GetSHA256(dropF)
-		    
-		    // Base64エンコードされたファイルデータ（小さいファイルの場合）
-		    // Base64エンコードされたファイルデータ（小さいファイルの場合）
-		    if dropF.Length < 10485760 then  // 10MB未満
-		      try
-		        var bis as BinaryStream = BinaryStream.Open(dropF)
-		        if bis <> nil then
-		          var data as String = bis.Read(bis.Length)
-		          bis.Close()
-		          fileData.Value("base64Data") = EncodeBase64(data)
-		        else
-		          fileData.Value("base64Data") = ""
-		        end if
-		      catch error as IOException
-		        fileData.Value("base64Data") = ""
-		      end try
-		    else
-		      fileData.Value("base64Data") = ""
-		    end if
-		  elseif dropF.IsFolder then
-		    // フォルダの場合はZIP化してハッシュ計算
-		    var zipName as String = dropF.Name + ".zip"
-		    var zipF as FolderItem = SpecialFolder.Temporary.Child(zipName)
-		    var zip as new ZipCompressClass
-		    try
-		      zip.CompressFolder(dropF, zipF)
-		      if zipF.Exists then
-		        fileData.Value("hash") = GetSHA256(zipF)
-		        zipF.Remove()
-		      else
-		        fileData.Value("hash") = ""
-		      end if
-		    catch error as RuntimeException
-		      fileData.Value("hash") = ""
-		    end try
-		    fileData.Value("base64Data") = ""
-		  else
-		    fileData.Value("hash") = ""
-		    fileData.Value("base64Data") = ""
-		  end if
-		  
-		  return fileData
+		  return me.SendRequest("PUT", endpoint, requestData)
 		End Function
 	#tag EndMethod
 
@@ -285,11 +425,63 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function SearchDeals(period As String, searchKey As String, fromDate As String, toDate As String) As Dictionary
-		  // GET /api/v1/deals?period={period}&keyword={searchKey}&from_date={fromDate}&to_date={toDate}
-		  // 戻り値: {"success": true, "deals": [array], "count": number}
+		Function SearchAllDeals(searchKey As String, fromDate As String, toDate As String, partner As String = "", dealType As String = "", limit As Integer = 0, offset As Integer = 0, periods() As String = Nil, viewMode As String = "flat") As Dictionary
+		  // POST /v1/api/all-deals - 全期間横断検索
+		  // 戻り値: {"success": true, "view": "flat|history", "count": number, "deals": [array], "periods": [array]}
+		  var requestData As New Dictionary
+		  
+		  // オプションパラメータを設定
+		  if fromDate <> "" then
+		    requestData.Value("from_date") = fromDate
+		  end if
+		  
+		  if toDate <> "" then
+		    requestData.Value("to_date") = toDate
+		  end if
+		  
+		  if periods <> Nil and periods.Count > 0 then
+		    requestData.Value("periods") = periods
+		  end if
+		  
+		  if partner <> "" then
+		    requestData.Value("partner") = partner
+		  end if
+		  
+		  if dealType <> "" then
+		    requestData.Value("type") = dealType
+		  end if
+		  
+		  if searchKey <> "" then
+		    requestData.Value("keyword") = searchKey
+		  end if
+		  
+		  if limit > 0 then
+		    requestData.Value("limit") = limit
+		  end if
+		  
+		  if offset > 0 then
+		    requestData.Value("offset") = offset
+		  end if
+		  
+		  // viewパラメータを追加
+		  if viewMode <> "" then
+		    requestData.Value("view") = viewMode
+		  end if
+		  
+		  return me.SendRequest("POST", "/v1/api/all-deals", requestData)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function SearchDeals(period As String, searchKey As String, fromDate As String, toDate As String, viewMode As String = "flat") As Dictionary
+		  // GET /v1/api/deals?period={period}&view={viewMode}&keyword={searchKey}&from_date={fromDate}&to_date={toDate}
+		  // 戻り値: {"success": true, "view": "flat|history", "deals": [array], "count": number}
 		  var params() As String
 		  params.Add("period=" + period)
+		  
+		  if viewMode <> "" then
+		    params.Add("view=" + viewMode)
+		  end if
 		  
 		  if searchKey <> "" then
 		    params.Add("keyword=" + searchKey)
@@ -304,13 +496,13 @@ Protected Class APIClientClass
 		  end if
 		  
 		  var queryString As String = String.FromArray(params, "&")
-		  return me.SendRequest("GET", "/api/v1/deals?" + queryString)
+		  return me.SendRequest("GET", "/v1/api/deals?" + queryString)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function SelectSQL(period As String, sql As String) As RowSet
-		  // API経由でSQL実行: POST /api/v1/query
+		  // API経由でSQL実行: POST /v1/api/query
 		  
 		  var queryData as New Dictionary
 		  queryData.Value("period") = period
@@ -318,7 +510,7 @@ Protected Class APIClientClass
 		  queryData.Value("limit") = 1000  // デフォルト制限値
 		  
 		  Try
-		    var result As Dictionary = me.SendRequest("POST", "/api/v1/query", queryData)
+		    var result As Dictionary = me.SendRequest("POST", "/v1/api/query", queryData)
 		    
 		    if result = nil or not result.HasKey("success") or not result.Value("success").BooleanValue then
 		      var errorMsg as String = "SQL query failed"
@@ -327,6 +519,14 @@ Protected Class APIClientClass
 		      end if
 		      me.LastError = errorMsg
 		      Raise New DatabaseException(errorMsg)
+		    end if
+		    
+		    // APIレスポンスからRowSetを作成して返す
+		    if result.HasKey("rows") and result.Value("rows").IsArray then
+		      return CreateRowSetFromAPIResponse(result.Value("rows"))
+		    else
+		      // 空のRowSetを返す
+		      return CreateEmptyRowSet()
 		    end if
 		    
 		  Catch error As RuntimeException
@@ -363,8 +563,19 @@ Protected Class APIClientClass
 		    // レスポンス処理
 		    var httpStatus as Integer = request.HTTPStatusCode
 		    if httpStatus >= 400 then
-		      result.Value("success") = false
-		      result.Value("message") = "HTTP Error " + httpStatus.ToString
+		      if httpStatus = 409 and response <> "" then
+		        // 409 Conflictの場合はJSONレスポンスを解析
+		        result = ParseJSON(response)
+		        if result = nil then
+		          result = new Dictionary
+		          result.Value("success") = false
+		          result.Value("message") = "HTTP Error " + httpStatus.ToString
+		        end if
+		      else
+		        // その他のエラー
+		        result.Value("success") = false
+		        result.Value("message") = "HTTP Error " + httpStatus.ToString
+		      end if
 		      result.Value("httpStatusCode") = httpStatus
 		      return result
 		    end if
@@ -522,44 +733,13 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function SystemSQL(tableName As String, sql As String) As RowSet
-		  // System.dbの指定テーブルに対するSQL実行
-		  var queryData as New Dictionary
-		  queryData.Value("database") = "System"
-		  queryData.Value("table") = tableName
-		  queryData.Value("query") = sql
-		  queryData.Value("limit") = 1000
-		  
-		  Try
-		    var result As Dictionary = me.SendRequest("POST", "/api/v1/system/sql", queryData)
-		    
-		    if result = nil or not result.HasKey("success") or not result.Value("success").BooleanValue then
-		      var errorMsg as String = "System DB query failed"
-		      if result <> nil and result.HasKey("message") then
-		        errorMsg = result.Value("message").StringValue
-		      end if
-		      me.LastError = errorMsg
-		      Raise New DatabaseException(errorMsg)
-		    end if
-		    
-		    // ここでRowSetオブジェクトを作成して返す必要があります
-		    // 実装はAPIサーバーからのレスポンス形式によります
-		    
-		  Catch error As RuntimeException
-		    me.LastError = error.Message
-		    Raise New DatabaseException("API request failed: " + error.Message)
-		  End
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function TestConnection() As Boolean
-		  // /api/v1/health
+		  // /v1/api/health
 		  // サーバーの生存確認
 		  me.LastError = ""
 		  
 		  try
-		    var result as Dictionary = me.SendRequest("GET", "/api/v1/health")
+		    var result as Dictionary = me.SendRequest("GET", "/v1/api/health")
 		    if result <> nil then
 		      if result.HasKey("success") and result.Value("success").BooleanValue then
 		        return true
@@ -585,40 +765,72 @@ Protected Class APIClientClass
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub UpdateDeal(dealNo As String, dealData As Dictionary)
-		  // PUT /api/v1/deals/{dealNo}
-		End Sub
+		Function UpdateDeal(period As String, dealData As Dictionary) As Dictionary
+		  // PUT /v1/api/deals/{dealNo}?period={period}
+		  var dealNo as String = dealData.Value("NO").StringValue
+		  var endpoint as String = "/v1/api/deals/" + dealNo + "?period=" + period
+		  
+		  // NOは除外してリクエストデータを作成
+		  var requestData as new Dictionary
+		  for each key as Variant in dealData.Keys
+		    if key.StringValue <> "NO" then
+		      requestData.Value(key.StringValue) = dealData.Value(key.StringValue)
+		    end if
+		  next
+		  
+		  return me.SendRequest("PUT", endpoint, requestData)
+		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function UpdateDealPartner(oldName As String, newName As String) As Dictionary
-		  // PUT /api/v1/deal-partners/:name
+		  // PUT /v1/api/deal-partners/:name
 		  var partnerData as new Dictionary
 		  partnerData.Value("name") = newName
-		  return me.SendRequest("PUT", "/api/v1/deal-partners/" + oldName, partnerData)
+		  return me.SendRequest("PUT", "/v1/api/deal-partners/" + oldName, partnerData)
+		End Function
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Function UpdateDealWithFile(period As String, dealData As Dictionary, fileData As MemoryBlock, fileName As String, force As Boolean = False) As Dictionary
+		  // PUT /v1/api/deals/{dealNo}?period={period} (multipart)
+		  var dealNo as String = dealData.Value("NO").StringValue
+		  var endpoint as String = "/v1/api/deals/" + dealNo + "?period=" + period
+		  if force then
+		    endpoint = endpoint + "&force=true"
+		  end if
+		  
+		  // NOは除外してリクエストデータを作成
+		  var requestData as new Dictionary
+		  for each key as Variant in dealData.Keys
+		    if key.StringValue <> "NO" then
+		      requestData.Value(key.StringValue) = dealData.Value(key.StringValue)
+		    end if
+		  next
+		  
+		  // multipartリクエストを送信
+		  return me.SendMultipartRequest("PUT", endpoint, requestData, fileData, fileName)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function UpdatePeriodDates(periodName As String, fromDate As String, toDate As String) As Dictionary
-		  // PUT /api/v1/periods/{periodName}/dates - 日付更新専用
-		  var periodData as new Dictionary
-		  periodData.Value("fromDate") = fromDate
-		  periodData.Value("toDate") = toDate
-		  
-		  var endpoint as String = "/api/v1/periods/" + periodName + "/dates"
-		  return me.SendRequest("PUT", endpoint, periodData)
+		  // PUT /v1/api/periods/dates?period={period}
+		  var endpoint as String = "/v1/api/periods/dates?period=" + periodName 
+		  var data as new Dictionary
+		  data.Value("startDate") = fromDate 
+		  data.Value("endDate") = toDate 
+		  return me.SendRequest("PUT", endpoint, data)
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
 		Function UpdatePeriodName(oldName As String, newName As String) As Dictionary
-		  // PUT /api/v1/periods/{oldName}/name - 期間名変更専用
-		  var periodData as new Dictionary
-		  periodData.Value("newName") = newName
-		  
-		  var endpoint as String = "/api/v1/periods/" + oldName + "/name"
-		  return me.SendRequest("PUT", endpoint, periodData)
+		  // PUT /v1/api/periods/name?period={period}
+		  var endpoint as String = "/v1/api/periods/name?period=" + oldName 
+		  var data as new Dictionary
+		  data.Value("newName") = newName
+		  return me.SendRequest("PUT", endpoint, data)
 		End Function
 	#tag EndMethod
 

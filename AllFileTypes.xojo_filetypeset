@@ -1,11 +1,11 @@
 #tag FileTypeSet
 	#tag FileType
-		CodeName=Alle
-		Extension=
+		CodeName=Any
+		Extension=*
 		Flags=&h2
 		MacCreator=
-		MacType=????
-		Name=all
+		MacType=
+		Name=Any
 		UTI=
 		UTIConformsTo=, public.data
 		Description=

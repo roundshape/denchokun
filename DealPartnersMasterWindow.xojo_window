@@ -478,10 +478,12 @@ End
 		      if outFp = nil then
 		        outFp = TextOutputStream.Create(errfile)
 		        outFp.Encoding = Encodings.ShiftJIS
+		        //outFp.Encoding = Encodings.UTF8
 		      end if
 		      var lineNO as integer = n+1
 		      var err as string = lineNO.ToString+"行目:不適切な文字含まれているか、社名の長さが"+maxPartnerLength.ToString+"bytesを超えています"
 		      err = err.ConvertEncoding(Encodings.ShiftJIS)
+		      //err = err.ConvertEncoding(Encodings.UTF8)
 		      outFp.WriteLine(err)
 		    end if
 		    var sql as string = "insert into TempTable(name) values('"+EncodeSqlString(name)+"')"
@@ -495,10 +497,12 @@ End
 		        if outFp = nil then
 		          outFp = TextOutputStream.Create(errfile)
 		          outFp.Encoding = Encodings.ShiftJIS
+		          //outFp.Encoding = Encodings.UTF8
 		        end if
 		        var lineNO as integer = n+1
 		        var err as string = lineNO.ToString+"行目:"+e.Message
 		        err = err.ConvertEncoding(Encodings.ShiftJIS)
+		        //err = err.ConvertEncoding(Encodings.UTF8)
 		        outFp.WriteLine(err)
 		      end Try
 		      App.DoEvents(10)
@@ -710,10 +714,9 @@ End
 #tag Events DealPartnerButton
 	#tag Event
 		Sub Pressed()
-		  var screenWidth as integer = DesktopDisplay.DisplayAt(0).Width
 		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
 		  
-		  var win as new PopupInMDBWindow("取引先の入力", nil, self)
+		  var win as new PopupInMDBWindow("取引先の入力")
 		  var screenWinLeft as integer = self.Left+self.PartnerNameField.Left
 		  var screenWinTop as integer = 30+self.Top+self.PartnerNameField.Top+self.PartnerNameField.Height //30 is windows title
 		  if screenWinTop+win.Height <= screenHeight then
@@ -723,8 +726,8 @@ End
 		  end if
 		  win.Left = screenWinLeft
 		  win.InputText.Text = self.PartnerNameField.Text //Kicks off TextChanged event
-		  win.ShowModal(self)
-		  //self.PartnerNameField.Text = win.SelectedValue
+		  win.ShowModal
+		  self.PartnerNameField.Text = win.InputTextValue
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -970,6 +973,6 @@ End
 		Group="Behavior"
 		InitialValue=""
 		Type="String"
-		EditorType=""
+		EditorType="MultiLineEditor"
 	#tag EndViewProperty
 #tag EndViewBehavior

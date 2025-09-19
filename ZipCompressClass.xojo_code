@@ -25,7 +25,6 @@ Protected Class ZipCompressClass
 
 	#tag Method, Flags = &h0
 		Sub ZipFile(z as ZipMBS, f as FolderItem, path as string)
-		  dim d as date
 		  dim b as BinaryStream
 		  dim info as ZipFileInfoMBS
 		  

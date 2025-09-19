@@ -1,11 +1,23 @@
 #tag Class
 Protected Class RecordListRowPropertiesClass
 	#tag Property, Flags = &h0
+		BaseNO As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		Children As Variant
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
 		DealPeriod As string
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		FilePath As String
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		HasChildren As Boolean
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
@@ -89,6 +101,22 @@ Protected Class RecordListRowPropertiesClass
 			InitialValue=""
 			Type="string"
 			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="BaseNO"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="String"
+			EditorType="MultiLineEditor"
+		#tag EndViewProperty
+		#tag ViewProperty
+			Name="HasChildren"
+			Visible=false
+			Group="Behavior"
+			InitialValue=""
+			Type="Boolean"
+			EditorType=""
 		#tag EndViewProperty
 	#tag EndViewBehavior
 End Class

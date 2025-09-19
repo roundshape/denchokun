@@ -72,39 +72,37 @@ Begin DesktopWindow DealPeriodWindow
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
-   Begin DesktopDateTimePicker FromDateTimePicker
-      Active          =   False
+   Begin DesktopButton FromDateTimePickerButton
       AllowAutoDeactivate=   True
-      AllowFocusRing  =   False
-      AllowTabStop    =   False
-      DisplayMode     =   0
-      DisplaySeconds  =   False
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "Ⅴ"
+      Default         =   False
       Enabled         =   True
-      GraphicalDisplay=   False
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
       Height          =   22
-      HourMode        =   0
       Index           =   -2147483648
       InitialParent   =   ""
+      Italic          =   False
       Left            =   13
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
       LockRight       =   False
       LockTop         =   True
-      PanelIndex      =   0
+      MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   1
       TabPanelIndex   =   0
-      TodayButtonCaption=   ""
+      TabStop         =   True
       Tooltip         =   ""
       Top             =   17
       Transparent     =   False
+      Underline       =   False
       Visible         =   True
-      Width           =   15
-      _mIndex         =   0
-      _mInitialParent =   ""
-      _mName          =   ""
-      _mPanelIndex    =   0
+      Width           =   17
    End
    Begin DoubleClickLabelClass FromDate
       AllowAutoDeactivate=   True
@@ -133,7 +131,7 @@ Begin DesktopWindow DealPeriodWindow
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   16
+      Top             =   18
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -165,45 +163,43 @@ Begin DesktopWindow DealPeriodWindow
       TextAlignment   =   2
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   16
+      Top             =   18
       Transparent     =   False
       Underline       =   False
       Visible         =   True
       Width           =   25
    End
-   Begin DesktopDateTimePicker ToDateTimePicker
-      Active          =   False
+   Begin DesktopButton toDateTimePickerButton
       AllowAutoDeactivate=   True
-      AllowFocusRing  =   False
-      AllowTabStop    =   False
-      DisplayMode     =   0
-      DisplaySeconds  =   False
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "Ⅴ"
+      Default         =   False
       Enabled         =   True
-      GraphicalDisplay=   False
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
       Height          =   22
-      HourMode        =   0
       Index           =   -2147483648
       InitialParent   =   ""
+      Italic          =   False
       Left            =   135
       LockBottom      =   False
       LockedInPosition=   False
       LockLeft        =   True
       LockRight       =   False
       LockTop         =   True
-      PanelIndex      =   0
+      MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   4
       TabPanelIndex   =   0
-      TodayButtonCaption=   ""
+      TabStop         =   True
       Tooltip         =   ""
       Top             =   17
       Transparent     =   False
+      Underline       =   False
       Visible         =   True
-      Width           =   15
-      _mIndex         =   0
-      _mInitialParent =   ""
-      _mName          =   ""
-      _mPanelIndex    =   0
+      Width           =   17
    End
    Begin DoubleClickLabelClass ToDate
       AllowAutoDeactivate=   True
@@ -232,7 +228,7 @@ Begin DesktopWindow DealPeriodWindow
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   16
+      Top             =   18
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -653,14 +649,7 @@ End
 		    self.Height = Height
 		  end if
 		  
-		  
-		  self.FromDateTimePicker.GraphicalDisplay = true
-		  self.FromDateTimePicker.DisplayMode = DesktopDateTimePicker.DisplayModes.DateOnly
-		  self.ToDateTimePicker.GraphicalDisplay = true
-		  self.ToDateTimePicker.DisplayMode = DesktopDateTimePicker.DisplayModes.DateOnly
-		  
-		  
-		  //find out the fromDateLimit and the toDateLimite
+		  //find out the fromDateLimit and the toDateLimit
 		  var fromDateLimit as string = "未設定"
 		  var toDateLimit as string = "未設定"
 		  
@@ -678,7 +667,7 @@ End
 		  end if
 		  
 		  // 指定期間の詳細情報を取得
-		  var result as Dictionary = apiClient.GetPeriod(self.DealPeriod)
+		  var result as Dictionary = apiClient.GetPeriodInfo(self.Title)
 		  if result.HasKey("success") and result.Value("success").BooleanValue then
 		    if result.HasKey("period") then
 		      var periodData as Dictionary = Dictionary(result.Value("period"))
@@ -708,7 +697,7 @@ End
 		    var m as integer = fromDateLimit.NthField("-",2).Val
 		    var d as integer = fromDateLimit.NthField("-",3).Val
 		    Var dt As New DateTime(y, m, d)
-		    self.FromDateTimePicker.SelectedDate = dt
+		    self.fromDate.Text = dt.SQLDate
 		  end if
 		  
 		  if toDateLimit = "未設定" then
@@ -718,7 +707,7 @@ End
 		    var m as integer = toDateLimit.NthField("-",2).Val
 		    var d as integer = toDateLimit.NthField("-",3).Val
 		    Var dt As New DateTime(y, m, d)
-		    self.ToDateTimePicker.SelectedDate = dt
+		    self.toDate.Text = dt.SQLDate
 		  end if
 		  
 		  self.RecordList.RowSelectionType = DesktopListBox.RowSelectionTypes.Single
@@ -771,12 +760,12 @@ End
 
 
 	#tag Method, Flags = &h0
-		Sub Constructor(basePath as string, period as string)
+		Sub Constructor(period as string)
 		  self.Title = period
-		  self.BaseFolderPath = basePath
-		  self.DealPeriod = period
+		  
 		  // Calling the overridden superclass constructor.
-		  Super.Constructor //this calls openning event
+		  Super.Constructor //this calls openning event of this Window
+		  
 		  
 		End Sub
 	#tag EndMethod
@@ -813,17 +802,16 @@ End
 		  self.RecordList.RemoveAllRows
 		  
 		  var apiClient as APICLientClass
-		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  apiClient = App.ConnectAPI(self.Title)
 		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
 		  
 		  Try
-		    // HistoryなのでSearchDealsを使用（削除されたレコードも含む可能性）
-		    var result as Dictionary = apiClient.SearchDeals(self.DealPeriod, keyword, fromDate, toDate)
+		    // view=history で階層データを取得
+		    var result as Dictionary = apiClient.SearchDeals(self.Title, keyword, fromDate, toDate, "history")
 		    
-		    // SearchNormalと同じレスポンス処理
 		    if result.HasKey("success") and result.Value("success").BooleanValue then
 		      if result.HasKey("deals") then
 		        var dealsArray as Variant = result.Value("deals")
@@ -840,16 +828,42 @@ End
 		              var DealPrice as string = dealDict.Value("DealPrice").StringValue
 		              var DealType as string = dealDict.Value("DealType").StringValue
 		              var DealName as string = dealDict.Value("DealName").StringValue
+		              var hasChildren as Boolean = dealDict.HasKey("children") and dealDict.Value("children").IsArray
 		              
-		              // リストに追加
-		              self.RecordList.AddRow("")
-		              var rowString as string = DealDate + "," + DealPartner + "," + DealPrice + "," + DealType + "," + DealName
+		              // RecStatusを取得
+		              var RecStatus as string = ""
+		              if dealDict.HasKey("RecStatus") then
+		                RecStatus = dealDict.Value("RecStatus").StringValue
+		              end if
+		              
+		              // 親レコードを追加（子がある場合は展開可能）
+		              if hasChildren then
+		                self.RecordList.AddExpandableRow("")
+		              else
+		                self.RecordList.AddRow("")
+		              end if
+		              
+		              // 1カラム表示（履歴モード）
+		              var rowString as string
+		              if RecStatus = "DELETE" then
+		                rowString = DealDate + "_" + DealPartner + "_" + DealPrice + "_" + DealType + "_" + DealName + " (削除済み)"
+		              else
+		                rowString = DealDate + "_" + DealPartner + "_" + DealPrice + "_" + DealType + "_" + DealName
+		              end if
 		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = rowString
 		              
-		              // RowTagを設定
+		              // RowTagに階層情報を保存
 		              var rowTag as new RecordListRowPropertiesClass
 		              rowTag.NO = NO
-		              rowTag.DealPeriod = self.DealPeriod
+		              rowTag.DealPeriod = self.Title
+		              rowTag.RecStatus = RecStatus
+		              rowTag.HasChildren = hasChildren
+		              
+		              // 子データを保存（展開時に使用）
+		              if hasChildren and dealDict.HasKey("children") then
+		                rowTag.Children = dealDict.Value("children")
+		              end if
+		              
 		              self.RecordList.RowTagAt(self.RecordList.LastAddedRowIndex) = rowTag
 		              
 		              if selectRowWithNO <> "" and selectRowWithNO = NO then
@@ -860,21 +874,19 @@ End
 		        end if
 		      end if
 		    else
-		      var errorMsg as String = "検索エラー"
+		      // エラー処理
+		      var errorMsg as String = "検索に失敗しました"
 		      if result.HasKey("message") then
 		        errorMsg = errorMsg + ": " + result.Value("message").StringValue
 		      end if
-		      MessageBox(errorMsg)
+		      self.StatusLabel.Text = errorMsg
 		    end if
 		    
 		  Catch error As RuntimeException
-		    apiClient.Close
-		    MessageBox("API Error: " + error.Message)
-		    return
+		    self.StatusLabel.Text = "検索エラー: " + error.Message
 		  End Try
 		  
 		  apiClient.Close
-		  self.RecordList.Refresh(true)
 		End Sub
 	#tag EndMethod
 
@@ -894,14 +906,15 @@ End
 		  self.RecordList.RemoveAllRows
 		  
 		  var apiClient as APICLientClass
-		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  apiClient = App.ConnectAPI(self.Title)
 		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
 		  
 		  Try
-		    var result as Dictionary = apiClient.SearchDeals(self.DealPeriod, keyword, fromDate, toDate)
+		    // view=flat で最新レコードのみ取得
+		    var result as Dictionary = apiClient.SearchDeals(self.Title, keyword, fromDate, toDate, "flat")
 		    
 		    if result.HasKey("success") and result.Value("success").BooleanValue then
 		      if result.HasKey("deals") then
@@ -920,18 +933,36 @@ End
 		              var DealType as string = dealDict.Value("DealType").StringValue
 		              var DealName as string = dealDict.Value("DealName").StringValue
 		              
-		              // リストに追加
-		              self.RecordList.AddRow("")
-		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = DealDate      // 取引日
-		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 1) = DealPartner   // 取引先  
-		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 2) = DealPrice     // 金額
-		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 3) = DealType      // 種別
-		              self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 4) = DealName      // 取引名
+		              // RecStatusを取得（新API仕様）
+		              var RecStatus as string = ""
+		              if dealDict.HasKey("RecStatus") then
+		                RecStatus = dealDict.Value("RecStatus").StringValue
+		              end if
 		              
-		              // RowTagを設定（必要に応じて）
+		              // 削除済みレコードの表示制御
+		              if RecStatus = "DELETE" then
+		                // 削除済みの場合は「(削除済み)」を追加
+		                self.RecordList.AddRow("")
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = DealDate
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 1) = DealPartner
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 2) = DealPrice
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 3) = DealType + " (削除済み)"
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 4) = DealName
+		              else
+		                // 通常レコード
+		                self.RecordList.AddRow("")
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 0) = DealDate
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 1) = DealPartner
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 2) = DealPrice
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 3) = DealType
+		                self.RecordList.CellTextAt(self.RecordList.LastAddedRowIndex, 4) = DealName
+		              end if
+		              
+		              // RowTagを設定
 		              var rowTag as new RecordListRowPropertiesClass
 		              rowTag.NO = NO
-		              rowTag.DealPeriod = self.DealPeriod
+		              rowTag.DealPeriod = self.Title
+		              rowTag.RecStatus = RecStatus  // RecStatusを保存
 		              self.RecordList.RowTagAt(self.RecordList.LastAddedRowIndex) = rowTag
 		              
 		              if selectRowWithNO <> "" and selectRowWithNO = NO then
@@ -942,21 +973,19 @@ End
 		        end if
 		      end if
 		    else
-		      var errorMsg as String = "検索エラー"
+		      // エラー処理
+		      var errorMsg as String = "検索に失敗しました"
 		      if result.HasKey("message") then
 		        errorMsg = errorMsg + ": " + result.Value("message").StringValue
 		      end if
-		      MessageBox(errorMsg)
+		      self.StatusLabel.Text = errorMsg
 		    end if
 		    
 		  Catch error As RuntimeException
-		    apiClient.Close
-		    MessageBox("API Error: " + error.Message)
-		    return
+		    self.StatusLabel.Text = "検索エラー: " + error.Message
 		  End Try
 		  
 		  apiClient.Close
-		  self.RecordList.Refresh(true)
 		End Sub
 	#tag EndMethod
 
@@ -974,15 +1003,6 @@ End
 	#tag EndMethod
 
 
-	#tag Property, Flags = &h0
-		BaseFolderPath As string
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
-		DealPeriod As string
-	#tag EndProperty
-
-
 #tag EndWindowCode
 
 #tag Events RecordList
@@ -998,82 +1018,63 @@ End
 		End Function
 	#tag EndEvent
 	#tag Event
-		Function PaintHeaderContent(g As Graphics, column As Integer) As Boolean
-		  //g.DrawingColor = Color.black
-		  //取引日    取引名    相手    金額    種別
-		  //select case column
-		  //case 0
-		  //g.DrawText("取引日",20,13)
-		  //case 1
-		  //g.DrawText("取引名",0,13)
-		  //case 2
-		  //g.DrawText("相手",0,13)
-		  //case 3
-		  //g.DrawText("金額",0,13)
-		  //case 4
-		  //g.DrawText("種別",0,13)
-		  //End Select
-		  //Return True
-		End Function
-	#tag EndEvent
-	#tag Event
 		Sub RowExpanded(row As Integer)
 		  var rowTag as RecordListRowPropertiesClass = me.RowTagAt(row)
-		  var lastNo as string = rowTag.NO
-		  var apiClient as APICLientClass
-		  apiClient = App.ConnectAPI(self.DealPeriod)
-		  if apiClient = nil then
-		    MessageBox App.FunctionError
-		    return
-		  end if
-		  var sql as string = "select * from Deals where nextNO is not NULL and "+_
-		  "NO like '"+lastNo.NthField("-",1)+"%'"
-		  sql = sql + " order by RecUpdate desc"
-		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(self.DealPeriod, sql)
-		    For Each aRec As DatabaseRow In rowsFound
-		      var NO as string = aRec.Column("NO").StringValue
-		      var prevNO as string = aRec.Column("prevNO").StringValue
-		      var DealType as string = DecodeSqlString(aRec.Column("DealType").StringValue)
-		      var DealDate as string = aRec.Column("DealDate").StringValue
-		      var DealName as string = DecodeSqlString(aRec.Column("DealName").StringValue)
-		      var DealPartner as string = DecodeSqlString(aRec.Column("DealPartner").StringValue)
-		      var DealPrice as integer = aRec.Column("DealPrice").IntegerValue
-		      var RecUpdate as string = aRec.Column("RecUpdate").StringValue.NthField(" ",1)
-		      var RegDate as string = aRec.Column("RegDate").StringValue.NthField(" ",1)
-		      var FileName as string = DecodeSqlString(aRec.Column("FilePath").StringValue)
-		      var RecStatus as string = aRec.Column("RecStatus").StringValue
-		      
-		      var rowString as string
-		      if RecUpdate = "" then // Since first record set nil to RecUpdate
-		        rowString = RegDate+"_"+DealDate+"_"+DealPartner+"_"+DealPrice.ToString+"_"+DealType+"_"+DealName
-		      else
-		        rowString = RecUpdate+"_"+DealDate+"_"+DealPartner+"_"+DealPrice.ToString+"_"+DealType+"_"+DealName
+		  
+		  if rowTag.HasChildren and rowTag.Children <> nil then
+		    // 既に取得済みの子データを展開
+		    var children() as Variant = rowTag.Children
+		    
+		    for each child as Variant in children
+		      if child isa Dictionary then
+		        var childDict as Dictionary = Dictionary(child)
+		        
+		        var NO as string = childDict.Value("NO").StringValue
+		        var DealDate as string = childDict.Value("DealDate").StringValue
+		        var DealPartner as string = childDict.Value("DealPartner").StringValue
+		        var DealPrice as string = childDict.Value("DealPrice").StringValue
+		        var DealType as string = childDict.Value("DealType").StringValue
+		        var DealName as string = childDict.Value("DealName").StringValue
+		        var RecUpdate as string = childDict.Value("RecUpdate").StringValue
+		        var RegDate as string = childDict.Value("RegDate").StringValue
+		        
+		        // 子レコードを追加
+		        Me.AddRow("")
+		        var childRow as Integer = me.LastAddedRowIndex
+		        
+		        // 子レコードの表示内容（更新日時を使用）
+		        var updateTime as String
+		        if RecUpdate <> "" then
+		          updateTime = RecUpdate.NthField("T", 1).NthField("Z", 1).ReplaceAll("-", "/")
+		        else
+		          updateTime = RegDate.NthField("T", 1).NthField("Z", 1).ReplaceAll("-", "/") + "(初回)"
+		        end if
+		        
+		        var rowString as string = updateTime + "_" + DealDate + "_" + DealPartner + "_" + DealPrice + "_" + DealType + "_" + DealName
+		        me.CellTextAt(childRow, 0) = rowString
+		        
+		        // 子のRowTag設定
+		        var childTag as new RecordListRowPropertiesClass
+		        childTag.NO = NO
+		        childTag.DealPeriod = self.Title
+		        childTag.RecStatus = childDict.Value("RecStatus").StringValue
+		        me.RowTagAt(childRow) = childTag
 		      end if
-		      Me.AddRow rowString
-		      rowTag = new RecordListRowPropertiesClass
-		      rowTag.NO = NO
-		      rowTag.DealPeriod = self.DealPeriod
-		      rowTag.FilePath = self.BaseFolderPath+self.DealPeriod+"\"+FileName
-		      rowTag.RecStatus = RecStatus
-		      me.RowTagAt(me.LastAddedRowIndex) = rowTag
 		    next
-		  Catch error As DatabaseException
-		    apiClient.Close
-		    MessageBox("Error: " + error.Message)
-		    return
-		  end Try
-		  apiClient.Close
+		  end if
 		End Sub
 	#tag EndEvent
 	#tag Event
 		Function PaintCellText(g as Graphics, row as Integer, column as Integer, x as Integer, y as Integer) As Boolean
 		  var aRowTag as RecordListRowPropertiesClass = me.RowTagAt(row)
 		  g.Bold = false
+		  
 		  if aRowTag.RecStatus = "DELETE" then
-		    g.forecolor=&cFF0000 // Rec 
+		    g.ForeColor = &c808080  // グレー色
+		    g.Italic = true         // 斜体
 		    return false
 		  end if
+		  
 		  return false
 		End Function
 	#tag EndEvent
@@ -1084,6 +1085,12 @@ End
 		  end if
 		  
 		  var rowTag as RecordListRowPropertiesClass = me.RowTagAt(me.SelectedRowIndex)
+		  
+		  // 削除済みレコードは編集不可
+		  if rowTag.RecStatus = "DELETE" then
+		    MessageBox("削除済みレコードは編集できません。参照のみ可能です。")
+		    return
+		  end if
 		  
 		  var NO as string
 		  var prevNO as string
@@ -1096,17 +1103,16 @@ End
 		  var RecUpdate as string
 		  var RegDate as string
 		  var FilePath as string
-		  var dropF as FolderItem
 		  
 		  var apiClient as APICLientClass
-		  apiClient = App.ConnectAPI(self.DealPeriod)
+		  apiClient = App.ConnectAPI(self.Title)
 		  if apiClient = nil then
 		    MessageBox(App.FunctionError)
 		    return
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(self.DealPeriod, sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(self.Title, sql)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")
@@ -1126,7 +1132,7 @@ End
 		    DealRemark = DecodeSqlString(rowsFound.Column("DealRemark").StringValue)
 		    RegDate = rowsFound.Column("RegDate").StringValue
 		    FilePath = DecodeSqlString(rowsFound.Column("FilePath").StringValue)
-		    dropF = new FolderItem(self.BaseFolderPath+self.DealPeriod+"\"+FilePath, FolderItem.PathModes.Native)
+		    //dropF = new FolderItem(self.BaseFolderPath+self.DealPeriod+"\"+FilePath, FolderItem.PathModes.Native)
 		  Catch error As DatabaseException
 		    apiClient.Close
 		    MessageBox("Error: " + error.Message)
@@ -1134,10 +1140,9 @@ End
 		  end Try
 		  apiClient.Close
 		  
-		  var selectedRowIndex as integer = me.SelectedRowIndex
 		  var scrollPosition as integer = me.ScrollPosition
 		  
-		  var win as new UpdateWindow
+		  var win as new UpdateWindow(NO, self)
 		  if self.HistoryCheck.Value then
 		    if rowTag.RecStatus = "DELETE" then
 		      win.Title = "削除レコード"
@@ -1146,27 +1151,26 @@ End
 		    end if
 		    win.UpdateButton.Enabled = false
 		  end if
-		  win.DealPeriodWin = self
-		  win.BaseFolderPath.Text = self.BaseFolderPath
-		  var baseF as FolderItem = new FolderItem(self.BaseFolderPath, FolderItem.PathModes.Native)
-		  win.ReCreateDealPeriodPopupMenu(baseF, self.DealPeriod)
-		  win.DealNO = NO
+		  //var baseF as FolderItem = new FolderItem(self.BaseFolderPath, FolderItem.PathModes.Native)
+		  //win.ReCreateDealPeriodPopupMenu(baseF, self.DealPeriod)
+		  //win.DealNO = NO
 		  win.DealingDate.Text = DealDate
+		  //win.DealingDateTimePicker.SelectedDate = DateTime.FromString(DealDate.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
 		  win.DealingNameField.Text = DealName
 		  win.DealingPartnerField.Text = DealPartner
 		  win.DealingPriceField.Text = DealPrice
 		  win.DealingRemarkField.Text = DealRemark
 		  win.ReCreateDealTypePopupMenu(DealType)
-		  win.DropFilePathLabel.Text = dropF.NativePath
-		  win.DropFilePathLabel.Tooltip = dropF.NativePath
+		  win.DropFilePathLabel.Text = FilePath
+		  win.DropFilePathLabel.Tooltip = FilePath
 		  dim w, h as integer
 		  w = win.DropCanvas.Width
 		  h = win.DropCanvas.Height
-		  if w < h then
-		    win.DropCanvas.Backdrop = dropF.IconMBS(w)
-		  else
-		    win.DropCanvas.Backdrop = dropF.IconMBS(h)
-		  end if
+		  //if w < h then
+		  //win.DropCanvas.Backdrop = dropF.IconMBS(w)
+		  //else
+		  //win.DropCanvas.Backdrop = dropF.IconMBS(h)
+		  //end if
 		  win.ShowModal
 		  
 		  me.ScrollPosition = scrollPosition
@@ -1181,10 +1185,35 @@ End
 		End Function
 	#tag EndEvent
 #tag EndEvents
-#tag Events FromDateTimePicker
+#tag Events FromDateTimePickerButton
 	#tag Event
-		Sub DateChanged(value as DateTime)
-		  self.FromDate.Text = me.SelectedDate.SQLDate
+		Sub Pressed()
+		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
+		  
+		  var win as new DealDateTimePickerWindow
+		  var screenWinLeft as integer = self.Left+self.FromDate.Left
+		  var screenWinTop as integer = 30+self.Top+self.FromDate.Top+self.FromDate.Height //30 is windows title
+		  if screenWinTop+win.Height <= screenHeight then
+		    win.Top = screenWinTop
+		  else
+		    win.Top = screenWinTop-win.Height-self.FromDate.Height-30
+		  end if
+		  win.Left = screenWinLeft
+		  
+		  if self.FromDate.Text <> "" then
+		    if self.FromDate.Text = "未設定" then
+		      win.DealDateTimePicker.SelectedDate = DateTime.Now
+		    else
+		      win.DealDateTimePicker.SelectedDate = DateTime.FromString(self.FromDate.Text.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		    end if
+		  end if
+		  
+		  win.ShowModal
+		  
+		  if win.Canceled <> True and win.SelectedDate <> nil then
+		    self.FromDate.Text = win.SelectedDate.SQLDate
+		    self.StatusLabel.Text = ""
+		  end if
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -1202,10 +1231,35 @@ End
 		End Function
 	#tag EndEvent
 #tag EndEvents
-#tag Events ToDateTimePicker
+#tag Events toDateTimePickerButton
 	#tag Event
-		Sub DateChanged(value as DateTime)
-		  self.ToDate.Text = me.SelectedDate.SQLDate
+		Sub Pressed()
+		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
+		  
+		  var win as new DealDateTimePickerWindow
+		  var screenWinLeft as integer = self.Left+self.toDate.Left
+		  var screenWinTop as integer = 30+self.Top+self.toDate.Top+self.toDate.Height //30 is windows title
+		  if screenWinTop+win.Height <= screenHeight then
+		    win.Top = screenWinTop
+		  else
+		    win.Top = screenWinTop-win.Height-self.toDate.Height-30
+		  end if
+		  win.Left = screenWinLeft
+		  
+		  if self.toDate.Text <> "" then
+		    if self.FromDate.Text = "未設定" then
+		      win.DealDateTimePicker.SelectedDate = DateTime.Now
+		    else
+		      win.DealDateTimePicker.SelectedDate = DateTime.FromString(self.toDate.Text.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		    end if
+		  end if
+		  
+		  win.ShowModal
+		  
+		  if win.Canceled <> True and win.SelectedDate <> nil then
+		    self.toDate.Text = win.SelectedDate.SQLDate
+		    self.StatusLabel.Text = ""
+		  end if
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -1231,7 +1285,6 @@ End
 		    return true
 		  end if
 		  
-		  var screenWidth as integer = DesktopDisplay.DisplayAt(0).Width
 		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
 		  var screenWinLeft as integer = self.Left+self.SearchKeyField.Left
 		  var screenWinTop as integer = 30+self.Top+self.SearchKeyField.Top+self.SearchKeyField.Height //30 is windows title
@@ -1249,7 +1302,7 @@ End
 		    end if
 		    return true //avoid '#' since # is added after SelectedText
 		  elseif key = "@" then
-		    var win as new PopupInMDBWindow("取引先の入力", nil, nil)
+		    var win as new PopupInMDBWindow("取引先の入力")
 		    if screenWinTop+win.Height <= screenHeight then
 		      win.Top = screenWinTop
 		    else
@@ -1258,9 +1311,7 @@ End
 		    win.Left = screenWinLeft
 		    win.InputText.Text = "" //Kicks off TextChanged event
 		    win.ShowModal
-		    if win.SelectedValue <> "" then
-		      self.SearchKeyField.SelectedText = win.SelectedValue
-		    end if
+		    self.SearchKeyField.SelectedText = win.InputTextValue
 		    return true //avoid '@' since @ is added after SelectedText
 		  end if
 		  return false
@@ -1276,6 +1327,12 @@ End
 		  
 		  var rowTag as RecordListRowPropertiesClass = self.RecordList.RowTagAt(self.RecordList.SelectedRowIndex)
 		  
+		  // 削除済みレコードは削除不可
+		  if rowTag.RecStatus = "DELETE" then
+		    MessageBox("このレコードは既に削除されています。削除済みレコードを再削除することはできません。")
+		    return
+		  end if
+		  
 		  var NO as string
 		  var prevNO as string
 		  var DealType as string
@@ -1287,16 +1344,15 @@ End
 		  var RecUpdate as string
 		  var RegDate as string
 		  var FilePath as string
-		  var dropF as FolderItem
 		  
-		  var apiClient as APICLientClass = App.ConnectAPI(self.DealPeriod)
+		  var apiClient as APICLientClass = App.ConnectAPI(self.Title)
 		  if apiClient = nil then
 		    MessageBox App.FunctionError
 		    return
 		  end if
 		  var sql as string = "select * from Deals where NO='"+rowTag.NO+"'"
 		  Try
-		    var rowsFound as RowSet = apiClient.SelectSQL(self.DealPeriod, sql)
+		    var rowsFound as RowSet = apiClient.SelectSQL(self.Title, sql)
 		    if rowsFound.RowCount() = 0 then //should be one
 		      apiClient.Close
 		      MessageBox("Error: can't find a record")
@@ -1316,7 +1372,6 @@ End
 		    DealRemark = DecodeSqlString(rowsFound.Column("DealRemark").StringValue)
 		    RegDate = rowsFound.Column("RegDate").StringValue
 		    FilePath = DecodeSqlString(rowsFound.Column("FilePath").StringValue)
-		    dropF = new FolderItem(self.BaseFolderPath+self.DealPeriod+"\"+FilePath, FolderItem.PathModes.Native)
 		    
 		  Catch error As DatabaseException
 		    apiClient.Close
@@ -1340,9 +1395,8 @@ End
 		  end if
 		  var reason as string = dlg.Reason
 		  
-		  
 		  var ret as string
-		  ret = App.DeleteDeal(self.BaseFolderPath, self.DealPeriod, NO, reason, nil, "", "")
+		  ret = App.DeleteDeal(self.Title, NO, reason, nil, "", "")
 		  if ret <> "OK" then
 		    apiClient.RollbackTransaction()
 		    apiClient.Close()
@@ -1365,7 +1419,7 @@ End
 		    self.RecordList.ColumnCount = 1
 		    self.RecordList.ColumnWidths = "100%"
 		    //self.RecordList.HasHeader = false
-		    self.RecordList.HeaderAt(0) = "更新日_取引日_取引先_金額_種別_取引名"
+		    self.RecordList.HeaderAt(0) = "取引日_取引先_金額_種別_取引名"
 		    self.RecordList.ColumnAlignmentAt(0) = DesktopListBox.Alignments.Left
 		    self.DeleteButton.Enabled = false
 		  else
@@ -1680,21 +1734,5 @@ End
 		InitialValue="False"
 		Type="Boolean"
 		EditorType=""
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="DealPeriod"
-		Visible=false
-		Group="Behavior"
-		InitialValue=""
-		Type="string"
-		EditorType="MultiLineEditor"
-	#tag EndViewProperty
-	#tag ViewProperty
-		Name="BaseFolderPath"
-		Visible=false
-		Group="Behavior"
-		InitialValue=""
-		Type="string"
-		EditorType="MultiLineEditor"
 	#tag EndViewProperty
 #tag EndViewBehavior

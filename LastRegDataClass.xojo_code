@@ -1,8 +1,8 @@
 #tag Class
 Protected Class LastRegDataClass
 	#tag Method, Flags = &h0
-		Function IsSameAsNewData(BaseFolderPath as string, DealPeriod as string, DealType as string, DealDate as String, DealPrice as integer, DealName as string, DealPartner as string, DealRemark as string, DropF as FolderItem) As Boolean
-		  if me.BaseFolderPath <> BaseFolderPath then
+		Function IsSameAsNewData(url as string, DealPeriod as string, DealType as string, DealPrice as integer, DealName as string, DealPartner as string, DealRemark as string, DropF as FolderItem) As Boolean
+		  if me.ServerURL <> url then
 		    return false
 		  end if
 		  if me.DealPeriod <> DealPeriod then
@@ -30,10 +30,6 @@ Protected Class LastRegDataClass
 		End Function
 	#tag EndMethod
 
-
-	#tag Property, Flags = &h0
-		BaseFolderPath As string
-	#tag EndProperty
 
 	#tag Property, Flags = &h0
 		DealDate As String
@@ -65,6 +61,10 @@ Protected Class LastRegDataClass
 
 	#tag Property, Flags = &h0
 		DropF As FolderItem
+	#tag EndProperty
+
+	#tag Property, Flags = &h0
+		ServerURL As string
 	#tag EndProperty
 
 
@@ -110,7 +110,7 @@ Protected Class LastRegDataClass
 			EditorType=""
 		#tag EndViewProperty
 		#tag ViewProperty
-			Name="BaseFolderPath"
+			Name="ServerURL"
 			Visible=false
 			Group="Behavior"
 			InitialValue=""

@@ -585,40 +585,6 @@ Begin DesktopWindow MainWindow
       Visible         =   True
       Width           =   460
    End
-   Begin DesktopDateTimePicker DealingDateTimePicker
-      Active          =   False
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   False
-      AllowTabStop    =   False
-      DisplayMode     =   0
-      DisplaySeconds  =   False
-      Enabled         =   True
-      GraphicalDisplay=   False
-      Height          =   22
-      HourMode        =   0
-      Index           =   -2147483648
-      InitialParent   =   ""
-      Left            =   86
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      PanelIndex      =   0
-      Scope           =   0
-      TabIndex        =   21
-      TabPanelIndex   =   0
-      TodayButtonCaption=   ""
-      Tooltip         =   ""
-      Top             =   90
-      Transparent     =   False
-      Visible         =   True
-      Width           =   15
-      _mIndex         =   0
-      _mInitialParent =   ""
-      _mName          =   ""
-      _mPanelIndex    =   0
-   End
    Begin DesktopButton RegisterButton
       AllowAutoDeactivate=   True
       Bold            =   False
@@ -876,7 +842,7 @@ Begin DesktopWindow MainWindow
       Bold            =   False
       Cancel          =   False
       Caption         =   "V"
-      Default         =   False
+      Default         =   True
       Enabled         =   True
       FontName        =   "System"
       FontSize        =   0.0
@@ -1041,6 +1007,37 @@ Begin DesktopWindow MainWindow
       Visible         =   True
       Width           =   60
    End
+   Begin DesktopButton DealingDateTimePickerButton
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "V"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   22
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   82
+      LockBottom      =   False
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   True
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   34
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   90
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   22
+   End
 End
 #tag EndDesktopWindow
 
@@ -1110,7 +1107,7 @@ End
 		  self.ServerURL.Text = apiServerURL
 		  
 		  // APIサーバーへの接続確認（オプション）
-		  if apiServerURL = "" or apiServerURL = "http://localhost:8080" then
+		  if apiServerURL = "" then
 		    self.MainStatusLabel.Text = "APIサーバーを設定してください（設定メニューから）"
 		  else
 		    self.MainStatusLabel.Text = "サーバー: " + apiServerURL
@@ -1120,11 +1117,9 @@ End
 		  
 		  self.ReCreateDealTypePopupMenu()
 		  
-		  self.DealingDateTimePicker.GraphicalDisplay = true
-		  self.DealingDateTimePicker.DisplayMode = DesktopDateTimePicker.DisplayModes.DateOnly
 		  self.DealingDate.Underline = true
 		  
-		  self.DropCanvas.AcceptFileDrop(AllFileTypes.All)
+		  self.DropCanvas.AcceptFileDrop(AllFileTypes.Any)
 		  self.DropCanvas.AllowFocus = true
 		  self.DropCanvas.AllowFocusRing = true
 		  
@@ -1173,15 +1168,53 @@ End
 
 
 	#tag Method, Flags = &h0
-		Function CreateBaseFolderSelectFile(baseF as FolderItem) As string
-		  Var output As TextOutputStream
-		  Var file As FolderItem = baseF.child("Denchokun.select")
-		  If file <> Nil Then
-		    output = TextOutputStream.Create(file)
-		    output.Close
-		    return "OK"
-		  End If
-		  return "can't create Denchokun.select"
+		Function AttemptDealRegistration(force As Boolean) As Dictionary
+		  // APIクライアント作成
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = App.GetAPIServerURL()
+		  
+		  // 接続確認
+		  if not apiClient.TestConnection() then
+		    var errorResult as new Dictionary
+		    errorResult.Value("success") = false
+		    errorResult.Value("message") = "APIサーバーに接続できません: " + apiClient.LastError
+		    return errorResult
+		  end if
+		  
+		  // 入力データの整理
+		  var type as String = self.DealTypePopupMenu.SelectedRowValue
+		  var date as String = self.DealingDate.Text
+		  var name as String = self.DealingNameField.Text.Trim
+		  var partner as String = self.DealingPartnerField.Text.Trim
+		  var price as String = self.DealingPriceField.Text.ReplaceAll(",", "").Trim
+		  var remark as String = self.DealingRemarkField.Text.Trim
+		  
+		  // 取引データの辞書作成
+		  var dealData as new Dictionary
+		  dealData.Value("DealType") = type
+		  dealData.Value("DealDate") = date
+		  dealData.Value("DealName") = name
+		  dealData.Value("DealPartner") = partner
+		  dealData.Value("DealPrice") = price.ToInteger
+		  dealData.Value("DealRemark") = remark
+		  dealData.Value("RecStatus") = "NEW"
+		  
+		  // ファイルデータ読み込み
+		  var dropF as new FolderItem(self.DropFilePathLabel.Text, FolderItem.PathModes.Native)
+		  var fileData as MemoryBlock
+		  try
+		    var binaryFile as BinaryStream = BinaryStream.Open(dropF)
+		    fileData = binaryFile.Read(binaryFile.Length)
+		    binaryFile.Close()
+		  catch error as IOException
+		    var errorResult as new Dictionary
+		    errorResult.Value("success") = false
+		    errorResult.Value("message") = "ファイル読み込みエラー: " + error.Message
+		    return errorResult
+		  end try
+		  
+		  // API経由で登録（force対応）
+		  return apiClient.InsertDealWithFile(self.DealPeriodPopupMenu.SelectedRowValue, dealData, fileData, dropF.Name, force)
 		End Function
 	#tag EndMethod
 
@@ -1197,9 +1230,53 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
+		Sub HandleRegistrationResult(result As Dictionary)
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    // 成功処理
+		    if result.HasKey("warning") and result.Value("warning").StringValue = "duplicate_file" then
+		      var warningMsg as String = "登録完了（重複ファイル）" + EndOfLine
+		      warningMsg = warningMsg + "取引番号: " + result.Value("dealNo").StringValue
+		      MessageBox(warningMsg)
+		    else
+		      self.MainStatusLabel.Text = "登録しました（取引番号: " + result.Value("dealNo").StringValue + "）"
+		    end if
+		    
+		    // LastRegData設定
+		    if self.LastRegData = nil then
+		      self.LastRegData = new LastRegDataClass
+		    end if
+		    self.LastRegData.ServerURL = self.ServerURL.Text
+		    self.LastRegData.DealPeriod = self.DealPeriodPopupMenu.SelectedRowValue
+		    self.LastRegData.DealType = self.DealTypePopupMenu.SelectedRowValue
+		    self.LastRegData.DealDate = self.DealingDate.Text
+		    self.LastRegData.DealName = self.DealingNameField.Text.Trim
+		    self.LastRegData.DealPartner = self.DealingPartnerField.Text.Trim
+		    self.LastRegData.DealRemark = self.DealingRemarkField.Text.Trim
+		    self.LastRegData.DealPrice = self.DealingPriceField.Text.ReplaceAll(",", "").Trim.ToInteger
+		    self.LastRegData.DropF = new FolderItem(self.DropFilePathLabel.Text, FolderItem.PathModes.Native)
+		    
+		  else
+		    // エラー処理
+		    if result.HasKey("error") and result.Value("error").StringValue = "duplicate_file" then
+		      // 重複ファイル検出 - 確認ダイアログを表示
+		      self.ShowDuplicateFileDialog(result)
+		    else
+		      // その他のエラー
+		      var errorMsg as String = "登録エラー"
+		      if result.HasKey("message") then
+		        errorMsg = errorMsg + ": " + result.Value("message").StringValue
+		      end if
+		      self.MainStatusLabel.Text = errorMsg
+		      MessageBox errorMsg
+		    end if
+		  end if
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
 		Sub ReCreateDealPeriodPopupMenu()
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var workingPeriod as string = base.GetAttribute("workingPeriod")
+		  var base as XmlNode = App.XmlPref.GetNode("APIServer")
+		  var currentPeriod as string = base.GetAttribute("CurrentPeriod")
 		  
 		  self.DealPeriodPopupMenu.RemoveAllRows
 		  
@@ -1235,18 +1312,18 @@ End
 		    MessageBox(errorMsg)
 		  end if
 		  
-		  var i, workingPeriodIndex as integer
-		  workingPeriodIndex = -1
+		  var i, currentPeriodIndex as integer
+		  currentPeriodIndex = -1
 		  i = 0
 		  For Each aName As string In periodNames
 		    self.DealPeriodPopupMenu.AddRow aName
-		    if aName = workingPeriod then
-		      workingPeriodIndex = i
+		    if aName = currentPeriod then
+		      currentPeriodIndex = i
 		    end if
 		    i = i + 1
 		  Next
 		  
-		  if workingPeriodIndex < 0 then
+		  if currentPeriodIndex < 0 then
 		    if periodNames.Count = 0 then
 		      self.MainStatusLabel.Text = "利用可能な期間がありません"
 		      self.DealPeriodPopupMenu.SelectedRowIndex = -1
@@ -1260,7 +1337,7 @@ End
 		    if self.MainStatusLabel.Text = "" then
 		      self.MainStatusLabel.Text = ""
 		    end if
-		    self.DealPeriodPopupMenu.SelectedRowIndex = workingPeriodIndex
+		    self.DealPeriodPopupMenu.SelectedRowIndex = currentPeriodIndex
 		  end if
 		  
 		  return
@@ -1286,18 +1363,6 @@ End
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub ReFreshPeriodWindow(period as string, selectRowWithNO as string = "")
-		  for i as integer = 0 to UBound(self.DealPeriodWins)
-		    var win as DealPeriodWindow = self.DealPeriodWins(i)
-		    if win.Title = period then
-		      win.SearchAndGetResults(selectRowWithNO)
-		      win.SelectRecordListRow(selectRowWithNO)
-		    end if
-		  next
-		End Sub
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Sub SetSearchDateOfPeriodWindow(period as string, dealDate as string)
 		  for i as integer = 0 to UBound(self.DealPeriodWins)
 		    var win as DealPeriodWindow = self.DealPeriodWins(i)
@@ -1306,6 +1371,54 @@ End
 		      win.ToDate.Text = dealDate
 		    end if
 		  next
+		End Sub
+	#tag EndMethod
+
+	#tag Method, Flags = &h0
+		Sub ShowDuplicateFileDialog(result As Dictionary)
+		  var message as String = "【重複ファイル検出】" + EndOfLine + EndOfLine
+		  
+		  if result.HasKey("duplicates") then
+		    var duplicates as Variant = result.Value("duplicates")
+		    if duplicates.IsArray then
+		      var duplicateArray() as Variant = duplicates
+		      message = message + "既存の取引:" + EndOfLine
+		      for each duplicate as Variant in duplicateArray
+		        if duplicate isa Dictionary then
+		          var dupDict as Dictionary = Dictionary(duplicate)
+		          var dupInfo as String = "• " + dupDict.Value("NO").StringValue + " - "
+		          dupInfo = dupInfo + dupDict.Value("DealDate").StringValue + " - "
+		          dupInfo = dupInfo + dupDict.Value("DealPartner").StringValue + " - "
+		          dupInfo = dupInfo + dupDict.Value("DealPrice").StringValue + "円"
+		          message = message + dupInfo + EndOfLine
+		        end if
+		      next
+		    end if
+		  end if
+		  
+		  // 情報表示
+		  MessageBox(message)
+		  
+		  // 確認ダイアログ
+		  var confirmMessage as String = "それでも登録しますか？"
+		  var dialog as new MessageDialog
+		  dialog.Message = confirmMessage
+		  dialog.ActionButton.Caption = "強制登録"
+		  dialog.CancelButton.Visible = true
+		  dialog.CancelButton.Caption = "キャンセル"
+		  
+		  var dialogResult as MessageDialogButton = dialog.ShowModal(self)
+		  
+		  if dialogResult = dialog.ActionButton then
+		    // 強制登録
+		    self.MainStatusLabel.Text = "強制登録中..."
+		    self.MainStatusLabel.Refresh()
+		    var forceResult as Dictionary = self.AttemptDealRegistration(true)
+		    self.HandleRegistrationResult(forceResult)
+		  else
+		    // キャンセル
+		    self.MainStatusLabel.Text = "登録がキャンセルされました"
+		  end if
 		End Sub
 	#tag EndMethod
 
@@ -1342,11 +1455,6 @@ End
 		  if obj.FolderItem.IsAlias then
 		    return
 		  end if
-		  //Check drop object is in BaseFolder
-		  if left(obj.FolderItem.NativePath, self.ServerURL.Text.Length) = self.ServerURL.Text then
-		    return
-		  end if
-		  
 		  
 		  dim w, h as integer
 		  w = self.DropCanvas.Width
@@ -1463,280 +1571,60 @@ End
 		  if me.SelectedRowIndex < 0 then
 		    Return
 		  end if
+		  var apiServerNode as XmlNode = App.XmlPref.GetNode("APIServer")
+		  apiServerNode.SetAttribute("CurrentPeriod", me.SelectedRowValue)
 		  
-		  var dbF as FolderItem = App.GetDatabaseFile(item.Text)
-		  if not dbF.Exists then
-		    //Since period folder created manually from windows
-		    var ret as string = App.CreateDatabaseFile(item.Text)
-		    if ret <> "OK" then
-		      self.MainStatusLabel.Text = ret
-		      return
-		    end if
-		  end if
-		  
-		  var base as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  if base = nil then
-		    self.MainStatusLabel.Text = "BaseFolder Node Access error"
-		    return
-		  end if
-		  base.SetAttribute("workingPeriod", item.Text)
-		  App.XmlPref.SavePreference()
 		  
 		  self.MainStatusLabel.Text = ""
 		  
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events DealingDateTimePicker
-	#tag Event
-		Sub DateChanged(value as DateTime)
-		  self.DealingDate.Text = me.SelectedDate.SQLDate
-		  
-		  self.MainStatusLabel.Text = ""
 		End Sub
 	#tag EndEvent
 #tag EndEvents
 #tag Events RegisterButton
 	#tag Event
 		Sub Pressed()
+		  // 入力チェック
 		  if self.DealingDate.Text = "" then
 		    self.MainStatusLabel.Text = "取引日が設定されていません"
 		    return
 		  end if
-		  if self.DealingPriceField.Text = "" then
-		    self.MainStatusLabel.Text = "取引金額が設定されていません"
+		  if self.DealingNameField.Text = "" then
+		    self.MainStatusLabel.Text = "取引名が入力されていません"
 		    return
 		  end if
-		  //if self.DealingNameField.Text = "" then
-		  //self.MainStatusLabel.Text = "取引名が設定されていません"
-		  //return
-		  //end if
 		  if self.DealingPartnerField.Text = "" then
-		    self.MainStatusLabel.Text = "取引先が設定されていません"
+		    self.MainStatusLabel.Text = "取引先が入力されていません"
 		    return
 		  end if
-		  
+		  if self.DealingPriceField.Text = "" then
+		    self.MainStatusLabel.Text = "金額が入力されていません"
+		    return
+		  end if
 		  if self.DropFilePathLabel.Text = "" then
-		    self.MainStatusLabel.Text = "電子ファイルが設定されていません"
+		    self.MainStatusLabel.Text = "ファイルが選択されていません"
 		    return
 		  end if
-		  
-		  var maxNameLength, maxPartnerLength, maxPriceLength, maxRemarkLength as integer
-		  maxNameLength = App.XmlPref.GetNode("InputLimit").GetAttribute("namebytes").Val
-		  maxPartnerLength = App.XmlPref.GetNode("InputLimit").GetAttribute("partnerbytes").Val
-		  maxRemarkLength = App.XmlPref.GetNode("InputLimit").GetAttribute("remarkbytes").Val
-		  if self.DealingNameField.Text.Bytes > maxNameLength then
-		    self.MainStatusLabel.Text = "取引名の長さが規定を超えています"
-		    return
-		  end if
-		  if self.DealingPartnerField.Text.Bytes > maxPartnerLength then
-		    self.MainStatusLabel.Text = "取引先の長さが規定を超えています"
-		    return
-		  end if
-		  if self.DealingRemarkField.Text.Bytes > maxRemarkLength then
-		    self.MainStatusLabel.Text = "備考の長さが規定を超えています"
-		    return
-		  end if
-		  
-		  
-		  var price as string = self.DealingPriceField.Text.ReplaceAll(",","")
-		  price = price.ReplaceAll(App.kCRLF,"")
-		  price = price.ReplaceAll(App.kCR,"")
-		  price = price.ReplaceAll(App.kLF,"")
-		  price = price.ReplaceAll(App.kTAB,"")
-		  if not IsPriceNumber(price) then
-		    self.MainStatusLabel.Text = "金額の入力記述が間違っています"
-		    return
-		  end if
-		  maxPriceLength = App.XmlPref.GetNode("InputLimit").GetAttribute("pricebytes").Val
-		  if price.Bytes > maxPriceLength then
-		    self.MainStatusLabel.Text = "金額の長さが規定を超えています"
-		    return
-		  end if
-		  
 		  if self.DealPeriodPopupMenu.SelectedRowIndex < 0 then
-		    self.MainStatusLabel.Text = "取引期間が選択されていません"
+		    self.MainStatusLabel.Text = "期間が選択されていません"
 		    return
 		  end if
 		  
-		  var baseNode as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  if baseNode = nil then
-		    MessageBox "can't find basefolder"
+		  // 価格の数値チェック
+		  var price as String = self.DealingPriceField.Text.ReplaceAll(",", "").Trim
+		  if not IsNumeric(price) then
+		    self.MainStatusLabel.Text = "金額は数値で入力してください"
 		    return
 		  end if
 		  
-		  var type as string = self.DealTypePopupMenu.SelectedRowValue
-		  var date as string = self.DealingDate.Text
-		  var fromDateLimit as string = "未設定"
-		  var toDateLimit as string = "未設定"
+		  // 登録処理開始
+		  self.MainStatusLabel.Text = "登録中..."
+		  self.MainStatusLabel.Refresh()
 		  
-		  // APIサーバーから期間の詳細情報を取得
-		  var apiClient as new APIClientClass
-		  apiClient.BaseURL = App.GetAPIServerURL()
-		  var periodResult as Dictionary = apiClient.GetPeriod(self.DealPeriodPopupMenu.SelectedRowValue)
+		  // 通常登録を試行
+		  var result as Dictionary = self.AttemptDealRegistration(false)
 		  
-		  if periodResult.HasKey("success") and periodResult.Value("success").BooleanValue then
-		    if periodResult.HasKey("period") then
-		      var periodData as Dictionary = Dictionary(periodResult.Value("period"))
-		      if periodData.HasKey("fromDate") then
-		        fromDateLimit = periodData.Value("fromDate").StringValue
-		      end if
-		      if periodData.HasKey("toDate") then
-		        toDateLimit = periodData.Value("toDate").StringValue
-		      end if
-		    end if
-		  end if
-		  
-		  if fromDateLimit <> "未設定" then
-		    if date < fromDateLimit then
-		      self.MainStatusLabel.Text = "取引日が範囲内ではありません"
-		      return
-		    end if
-		  end if
-		  if toDateLimit <> "未設定" then
-		    if date > toDateLimit then
-		      self.MainStatusLabel.Text = "取引日が範囲内ではありません"
-		      return
-		    end if
-		  end if
-		  
-		  var dropF as FolderItem = new FolderItem(self.DropFilePathLabel.Text, FolderItem.PathModes.Native)
-		  
-		  var errmsg as string = ""
-		  var alreadyRegistered as Boolean = false
-		  //if dropF.IsFolder then
-		  //alreadyRegistered = App.CheckFolderIsRegistered(dropF, self.DealPeriodPopupMenu.SelectedRowValue)
-		  //errmsg = "ドロップしたフォルダは既に登録されています"
-		  //else
-		  //alreadyRegistered = App.CheckImageIsRegistered(dropF, self.DealPeriodPopupMenu.SelectedRowValue)
-		  //errmsg = "ドロップした画像は既に登録されています"
-		  //end if
-		  if alreadyRegistered then
-		    Var d As New MessageDialog                  // declare the MessageDialog object
-		    Var b As MessageDialogButton                // for handling the result
-		    d.IconType = MessageDialog.IconTypes.Caution // display warning icon
-		    d.ActionButton.Caption = "検索"
-		    d.ActionButton.Default = true
-		    d.CancelButton.Visible = True               // show the Cancel button
-		    d.CancelButton.Default = false
-		    d.AlternateActionButton.Caption = "続行"
-		    d.AlternateActionButton.Visible = true      // show the "Don't Save" button
-		    d.AlternateActionButton.Default = false
-		    d.Message = errmsg
-		    //d.Explanation = "If you don't save, your changes will be lost. "
-		    
-		    b = d.ShowModal                             // display the dialog
-		    Select Case b                               // determine which button was pressed.
-		    Case d.ActionButton
-		      var win as DealPeriodWindow = App.MainWin.GetPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
-		      if win = nil then
-		        win = new DealPeriodWindow
-		        win.BaseFolderPath = self.ServerURL.Text
-		        win.DealPeriod = self.DealPeriodPopupMenu.SelectedRowValue
-		        win.Title = self.DealPeriodPopupMenu.SelectedRowValue
-		        App.MainWin.DealPeriodWins.Add win
-		      end if
-		      win.SearchKeyField.Text = ""
-		      for i as integer = 1 to App.FunctionReturn.CountFields(",")
-		        var no as string = App.FunctionReturn.NthField(",",i)
-		        if win.SearchKeyField.Text = "" then
-		          win.SearchKeyField.Text = "^"+no
-		        else
-		          win.SearchKeyField.Text = win.SearchKeyField.Text+" ^"+no
-		        end if
-		      next
-		      win.Show
-		      win.SearchButton.Press
-		      return
-		    Case d.CancelButton
-		      // user pressed Cancel
-		      return
-		    Case d.AlternateActionButton
-		      // user pressed AlternateActionButton
-		    End Select
-		  end if
-		  
-		  var name as string = self.DealingNameField.Text.ReplaceAll(" ","")
-		  name = name.ReplaceAll(App.kCRLF,"")
-		  name = name.ReplaceAll(App.kCR,"")
-		  name = name.ReplaceAll(App.kLF,"")
-		  name = name.ReplaceAll(App.kTAB,"")
-		  var partner as string = self.DealingPartnerField.Text.ReplaceAll(" ","")
-		  partner = partner.ReplaceAll(App.kCRLF,"")
-		  partner = partner.ReplaceAll(App.kCR,"")
-		  partner = partner.ReplaceAll(App.kLF,"")
-		  partner = partner.ReplaceAll(App.kTAB,"")
-		  var remark as string = self.DealingRemarkField.Text.ReplaceAll(" ","")
-		  
-		  if self.LastRegData <> nil then
-		    if self.LastRegData.IsSameAsNewData(self.ServerURL.Text, self.DealPeriodPopupMenu.SelectedRowValue,_
-		      type, date, price.ToInteger, name, partner, remark, dropF ) then
-		      System.Beep
-		      self.MainStatusLabel.Text = "前回登録したデータと同じです"
-		      return
-		    end if
-		  end if
-		  
-		  
-		  // 取引データの辞書作成
-		  var dealData as new Dictionary
-		  dealData.Value("DealType") = type
-		  dealData.Value("DealDate") = date
-		  dealData.Value("DealName") = name
-		  dealData.Value("DealPartner") = partner
-		  dealData.Value("DealPrice") = price.ToInteger
-		  dealData.Value("DealRemark") = remark
-		  dealData.Value("RecStatus") = "NEW"
-		  
-		  // ファイルデータ読み込み
-		  var fileData as MemoryBlock
-		  try
-		    var binaryFile as BinaryStream = BinaryStream.Open(dropF)
-		    fileData = binaryFile.Read(binaryFile.Length)
-		    binaryFile.Close()
-		  catch error as IOException
-		    self.MainStatusLabel.Text = "ファイル読み込みエラー: " + error.Message
-		    return
-		  end try
-		  
-		  // API経由で登録
-		  var result as Dictionary = apiClient.InsertDealWithFile(self.DealPeriodPopupMenu.SelectedRowValue, dealData, fileData, dropF.Name)
-		  
-		  // 結果処理
-		  var ret as string
-		  if result.HasKey("success") and result.Value("success").BooleanValue then
-		    ret = "OK:" + result.Value("dealNo").StringValue
-		  else
-		    if result.HasKey("message") then
-		      ret = "NG:" + result.Value("message").StringValue
-		    else
-		      ret = "NG:サーバーエラーが発生しました"
-		    end if
-		  end if
-		  
-		  if ret.left(2) <> "OK" then
-		    self.MainStatusLabel.Text = ret
-		    return
-		  end if
-		  
-		  
-		  //self.SetSearchDateOfPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue, self.DealingDate.Text)
-		  //self.ReFreshPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
-		  
-		  if self.LastRegData = nil then
-		    self.LastRegData = new LastRegDataClass
-		  end if
-		  self.LastRegData.BaseFolderPath = self.ServerURL.Text
-		  self.LastRegData.DealPeriod = self.DealPeriodPopupMenu.SelectedRowValue
-		  self.LastRegData.DealType = type
-		  self.LastRegData.DealDate = date
-		  self.LastRegData.DealName = name
-		  self.LastRegData.DealPartner = partner
-		  self.LastRegData.DealRemark = remark
-		  self.LastRegData.DealPrice = price.ToInteger
-		  self.LastRegData.DropF = dropF
-		  
-		  self.MainStatusLabel.Text = "登録しました"
+		  // 結果を処理
+		  self.HandleRegistrationResult(result)
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -1753,9 +1641,8 @@ End
 		      return
 		    end if
 		  next
-		  dim win as new DealPeriodWindow(self.ServerURL.Text, self.DealPeriodPopupMenu.SelectedRowValue)
+		  dim win as new DealPeriodWindow(self.DealPeriodPopupMenu.SelectedRowValue)
 		  self.DealPeriodWins.Add win
-		  //win.Title = self.DealPeriodPopupMenu.SelectedRowValue
 		  win.Show
 		End Sub
 	#tag EndEvent
@@ -1792,12 +1679,11 @@ End
 #tag Events DealPartnerButton
 	#tag Event
 		Sub Pressed()
-		  var screenWidth as integer = DesktopDisplay.DisplayAt(0).Width
 		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
 		  
-		  var win as new PopupInMDBWindow("取引先の入力", self, nil)
+		  var win as new PopupInMDBWindow("取引先の入力")
 		  var screenWinLeft as integer = self.Left+self.DealingPartnerField.Left
-		  var screenWinTop as integer = 30+self.Top+self.DealingPartnerField.Top+self.DealingPartnerField.Height //30 is windows title
+		  var screenWinTop as integer = 30+self.Top+self.DealingPartnerField.Top+self.DealingPartnerField.Height
 		  if screenWinTop+win.Height <= screenHeight then
 		    win.Top = screenWinTop
 		  else
@@ -1805,7 +1691,8 @@ End
 		  end if
 		  win.Left = screenWinLeft
 		  win.InputText.Text = self.DealingPartnerField.Text //Kicks off TextChanged event
-		  win.ShowModal(self)
+		  win.ShowModal
+		  self.DealingPartnerField.Text = win.InputTextValue
 		  
 		End Sub
 	#tag EndEvent
@@ -1816,6 +1703,34 @@ End
 		  var ret as string = App.OCR.DoOCR(self.DropFilePathLabel.Text, self.RunProgressWheel, self.MainStatusLabel)
 		  if ret <> "OK" then
 		    self.MainStatusLabel.Text = ret
+		  end if
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events DealingDateTimePickerButton
+	#tag Event
+		Sub Pressed()
+		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
+		  
+		  var win as new DealDateTimePickerWindow
+		  var screenWinLeft as integer = self.Left+self.DealingDate.Left
+		  var screenWinTop as integer = 30+self.Top+self.DealingDate.Top+self.DealingDate.Height //30 is windows title
+		  if screenWinTop+win.Height <= screenHeight then
+		    win.Top = screenWinTop
+		  else
+		    win.Top = screenWinTop-win.Height-self.DealingDate.Height-30
+		  end if
+		  win.Left = screenWinLeft
+		  
+		  if self.DealingDate.Text <> "" then
+		    win.DealDateTimePicker.SelectedDate = DateTime.FromString(self.DealingDate.Text.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		  end if
+		  
+		  win.ShowModal
+		  
+		  if win.Canceled <> True and win.SelectedDate <> nil then
+		    self.DealingDate.Text = win.SelectedDate.SQLDate
+		    self.MainStatusLabel.Text = ""
 		  end if
 		End Sub
 	#tag EndEvent
@@ -2062,6 +1977,6 @@ End
 		Group="Behavior"
 		InitialValue="nil"
 		Type="String"
-		EditorType=""
+		EditorType="MultiLineEditor"
 	#tag EndViewProperty
 #tag EndViewBehavior

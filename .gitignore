@@ -84,3 +84,6 @@ Denchokun.pref
 
 # Cursor AI rules (project-specific)
 .cursorrules
+
+# claude code CLI rules (project-specific)
+claude.md

@@ -32,15 +32,6 @@ Inherits DesktopApplication
 		    quit
 		    return
 		  end if
-		  // 既存のBaseFolderが無効な場合は初回起動相当として扱う
-		  var baseNode__ as XmlNode = XmlPref.GetNode("BaseFolder")
-		  if baseNode__ <> nil then
-		    var basePath__ as string = baseNode__.GetAttribute("path")
-		    var baseF__ as new FolderItem(basePath__, FolderItem.PathModes.Native)
-		    if baseF__ = nil or not baseF__.Exists or not baseF__.IsFolder then
-		      App.firstBoot = true
-		    end if
-		  end if
 		  
 		  me.InMDB = me.CreateInMDB()
 		  if me.InMDB = nil then
@@ -84,9 +75,8 @@ Inherits DesktopApplication
 		    var startup as string = periodWinNode.GetAttribute("Startup")
 		    if startup = "on" then
 		      if me.MainWin.ServerURL.Text <> "" and me.MainWin.DealPeriodPopupMenu.SelectedRowValue <> "" then
-		        var baseFolderPath as string = me.MainWin.ServerURL.Text
 		        var dealPeriod as string = me.MainWin.DealPeriodPopupMenu.SelectedRowValue
-		        dim win as new DealPeriodWindow(baseFolderPath, dealPeriod)
+		        dim win as new DealPeriodWindow(dealPeriod)
 		        //win.SearchAndGetResults("")
 		        me.MainWin.DealPeriodWins.Add win
 		      end if
@@ -98,187 +88,32 @@ Inherits DesktopApplication
 
 
 	#tag Method, Flags = &h0
-		Function CheckDroppeFileIsNewlyDropped(period as string, dropF as FolderItem) As boolean
-		  var check as string = App.GetBaseFolderPath()+period
-		  if dropF.NativePath.IndexOf(0, check, ComparisonOptions.CaseSensitive) > -1 then
-		    return false //Already registered path
-		  end if
-		  return true //newly dropped
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function CheckFolderIsRegistered(dropF as FolderItem, period as string) As Boolean
-		  me.FunctionReturn = ""
-		  me.FunctionCalled = "CheckFolderIsRegistered"
-		  me.FunctionError = ""
-		  var dropFileFolderPath as string = dropF.Parent.NativePath
-		  var zipF as new FolderItem(dropFileFolderPath+dropF.Name+".zip", FolderItem.PathModes.Native)
-		  var zip as new ZipCompressClass
-		  try
-		    zip.CompressFolder(dropF, zipF)
-		  Catch error as RuntimeException
-		    me.FunctionReturn = "NG:CompressFolder Error: " + error.Message
-		    return false
-		  end Try
-		  
-		  var ret as Boolean = App.CheckImageIsRegistered(zipF, period)
-		  zipF.Remove
-		  return ret
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function CheckImageIsRegistered(imageFile as FolderItem, period as string) As Boolean
-		  me.FunctionReturn = ""
-		  me.FunctionCalled = "CheckImageIsRegistered"
-		  me.FunctionError = ""
-		  var hash as String = GetSHA256(imageFile)
-		  var sql as String = "select NO from Deals where Hash = '"+hash+"' and nextNO is NULL and RecStatus <> 'DELETE'"
-		  var exists as Boolean = false
-		  var apiClient as APICLientClass = App.ConnectAPI(period)
-		  Var rowsFound As RowSet
-		  Try
-		    rowsFound = apiClient.SelectSQL(period, sql)
-		    if rowsFound.RowCount > 0 then
-		      exists = true
-		      For Each row As DatabaseRow In rowsFound
-		        if me.FunctionReturn = "" then
-		          me.FunctionReturn = row.Column("NO").StringValue
-		        else
-		          me.FunctionReturn = me.FunctionReturn+","+row.Column("NO").StringValue
-		        end if
-		      Next
-		    end if
-		    rowsFound.Close
-		  Catch error As DatabaseException
-		    apiClient.Close
-		    me.FunctionError = "Error: " + error.Message
-		    return false
-		  End Try
-		  apiClient.Close
-		  return exists
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function CheckPreviouslyTimeStampedFile(dropF as FolderItem) As Boolean
-		  var i as Integer = dropF.NativePath.IndexOf(0,App.GetBaseFolderPath(),ComparisonOptions.CaseSensitive)
-		  if i < 0 then
-		    Return false
-		  end if
-		  var storeF as FolderItem = dropF.Parent
-		  for each aF as FolderItem in storeF.Children
-		    if aF.Name.Left(4) = "ts_" then
-		      return true
-		    end if
-		  next
-		  return false
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function CheckTSAenable() As Boolean
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function ConnectAPI(DealPeriod as string) As APIClientClass
 		  me.FunctionCalled = "ConnectAPI"
 		  me.FunctionError = ""
 		  
-		  var apiClient as new APIClientClass
-		  apiClient.BaseURL = me.GetAPIServerURL()  // 新しく追加する設定取得メソッド
-		  
-		  if not apiClient.ConnectToPeriod(DealPeriod) then
-		    me.FunctionError = apiClient.LastError
+		  // 期間名の検証
+		  if DealPeriod = "" or DealPeriod.Trim = "" then
+		    me.FunctionError = "期間名が指定されていません"
 		    return nil
 		  end if
 		  
-		  return apiClient
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function CreateDatabaseFile(dealPeriod as string) As string
-		  var DenchokunDBF as FolderItem = nil
-		  DenchokunDBF = App.GetDatabaseFile(dealPeriod)
-		  if DenchokunDBF = nil then
-		    return "Denchokun.db Access error"
+		  var apiClient as new APIClientClass
+		  apiClient.BaseURL = me.GetAPIServerURL()  // 新しく追加する設定取得メソッド
+		  
+		  var connectResult as Dictionary = apiClient.ConnectToPeriod(DealPeriod)
+		  if not (connectResult.HasKey("success") and connectResult.Value("success").BooleanValue) then
+		    // エラー処理
+		    if connectResult.HasKey("error") then
+		      me.FunctionError = "接続エラー: " + connectResult.Value("error").StringValue
+		    else
+		      me.FunctionError = "期間への接続に失敗しました"
+		    end if
+		    return nil  // ← APIClientClass型なので nil を返す
 		  end if
 		  
-		  
-		  var apiClient as new APICLientClass
-		  apiClient.DatabaseFile = DenchokunDBF
-		  Try
-		    apiClient.CreateDatabase
-		    // 新規DB作成時の暗号化は無効化
-		    
-		    Var sql As String
-		    sql = "CREATE TABLE ""Deals"" ("+_
-		    """NO""    TEXT NOT NULL UNIQUE,"+_
-		    """nextNO""    TEXT,"+_
-		    """prevNO""    TEXT,"+_
-		    """DealType""    TEXT,"+_
-		    """DealDate""    TEXT,"+_
-		    """DealName""    TEXT,"+_
-		    """DealPartner""    TEXT,"+_
-		    """DealPrice""    INTEGER,"+_
-		    """DealRemark""    TEXT,"+_
-		    """RecUpdate""    TEXT,"+_
-		    """RegDate""    TEXT,"+_
-		    """RecStatus""    TEXT,"+_
-		    """FilePath""    TEXT,"+_
-		    """Hash""    TEXT,"+_
-		    "PRIMARY KEY(""NO"")"+_
-		    ")"
-		    Try
-		      apiClient.ExecuteSQL(sql)
-		    Catch error As DatabaseException
-		      apiClient.Close
-		      return "Create Deals tale Error: " + error.Message
-		    End Try
-		    
-		    
-		    sql = "CREATE INDEX IF NOT EXISTS idx_Hash ON Deals (Hash)"
-		    Try
-		      apiClient.ExecuteSQL(sql)
-		    Catch error As DatabaseException
-		      apiClient.Close
-		      return "Create index Error: " + error.Message
-		    End Try
-		    
-		    
-		    sql = "CREATE TABLE ""System"" ("+_
-		    """AppVersion""    TEXT,"+_
-		    """SQLiteLibraryVersion""    TEXT"+_
-		    ")"
-		    Try
-		      apiClient.ExecuteSQL(sql)
-		    Catch error As DatabaseException
-		      apiClient.Close
-		      return "Create System table Error: " + error.Message
-		    End Try
-		    sql = "Insert into System values('"+App.Version+"',"+_
-		    "'"+apiClient.LibraryVersion+"'"+_
-		    ")"
-		    Try
-		      apiClient.ExecuteSQL(sql)
-		    Catch error As DatabaseException
-		      apiClient.Close
-		      return "Insert into System Error: " + error.Message
-		    End Try
-		    
-		  Catch error As IOException
-		    // handle error here
-		    return "CreateDatabase Error: " + error.Message
-		  End Try
-		  apiClient.Close
-		  Return "OK"
+		  // 成功時は apiClient を返す
+		  return apiClient
 		End Function
 	#tag EndMethod
 
@@ -413,123 +248,32 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function CreateSqlConditionOld(searchKey as string) As string
-		  var rg as new RegEx
-		  var rgMatch as RegExMatch
-		  rg.SearchPattern = "^((([1-9]\d*)(,\d{3})*)|0)$"
+		Function DeleteDeal(deletePeriod as string, deleteNO as string, deleteReason as string, rollbackDB as APICLientClass, rollbackPeriod as string, rollbackNO as string) As string
+		  me.FunctionCalled = "DeleteDeal"
+		  me.FunctionError = ""
 		  
-		  var sqlCondition, priceCondition, typeCondition, partnerCondition, nameCondition as string
-		  var sKey as string = searchKey.ReplaceAll("　"," ")
-		  var items() as string = sKey.Split(" ")
-		  var priceDone as Boolean = false
-		  for each aItem as string in items
-		    if aItem = "" then
-		      continue
-		    end if
-		    
-		    var sign, price as string
-		    if aItem.Left(2) = "<=" then
-		      sign = "<="
-		      price = aItem.Middle(2)
-		    ElseIf aItem.Left(2) = ">=" then
-		      sign = ">="
-		      price = aItem.Middle(2)
-		    ElseIf aItem.Left(1) = "<" then
-		      sign = "<"
-		      price = aItem.Middle(1)
-		    ElseIf aItem.Left(1) = ">" then
-		      sign = ">"
-		      price = aItem.Middle(1)
-		    ElseIf aItem.Left(1) = "=" then
-		      sign = "="
-		      price = aItem.Middle(1)
-		    Else
-		      sign = "="
-		      price = aItem
-		    end if
-		    rgMatch = rg.Search(price)
-		    if rgMatch <> nil then
-		      price = rgMatch.SubExpressionString(0)
-		      price = price.ReplaceAll(",","")
-		    else
-		      price = "" // no match
-		    end if
-		    
-		    if price <> "" and not priceDone then
-		      if priceCondition = "" then
-		        priceCondition = "DealPrice "+sign+" "+price
-		      else
-		        priceCondition = priceCondition+" and DealPrice "+sign+" "+price
-		        priceDone = true
-		      end if
-		    else //not price
-		      if aItem.Left(1) = "#" then //DealType
-		        if typeCondition = "" then
-		          typeCondition = "DealType = '"+aItem.Middle(1)+"'"
-		        else
-		          typeCondition = typeCondition+" or DealType = '"+aItem.Middle(1)+"'"
-		        end if
-		      else //DealName or DealPartner
-		        if nameCondition = "" then
-		          nameCondition = "DealName like '%"+aItem+"%'"
-		        else
-		          nameCondition = nameCondition+" or DealName like '%"+aItem+"%'"
-		        end if
-		        if partnerCondition = "" then
-		          partnerCondition = "DealPartner like '%"+aItem+"%'"
-		        else
-		          partnerCondition = partnerCondition+" or DealPartner like '%"+aItem+"%'"
-		        end if
-		      end if
-		    end if
-		    
-		  next
-		  
-		  
-		  if nameCondition <> "" and partnerCondition <> "" then
-		    sqlCondition = "(("+nameCondition+") or ("+partnerCondition+"))"
-		    //ElseIf nameCondition = "" and partnerCondition <> "" then
-		    //sqlCondition = "("+partnerCondition+")"
-		    //ElseIf nameCondition <> "" and partnerCondition = "" then
-		    //sqlCondition = "("+nameCondition+")"
-		  else //nameCondition = "" and partnerCondition = ""
-		    sqlCondition = ""
-		  end if
-		  
-		  if priceCondition <> "" then
-		    if sqlCondition = "" then
-		      sqlCondition = "("+priceCondition+")"
-		    else
-		      sqlCondition = sqlCondition + " and ("+priceCondition+")"
-		    end if
-		  end if
-		  
-		  if typeCondition <> "" then
-		    if sqlCondition = "" then
-		      sqlCondition = "("+typeCondition+")"
-		    else
-		      sqlCondition = sqlCondition + " and ("+typeCondition+")"
-		    end if
-		  end if
-		  
-		  return sqlCondition
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function DeleteDeal(basePath as string, deletePeriod as string, deleteNO as string, deleteReason as string, rollbackDB as APICLientClass, rollbackPeriod as string, rollbackNO as string) As string
 		  var apiClient as APICLientClass = App.ConnectAPI(deletePeriod)
 		  if apiClient = nil then
 		    if rollbackPeriod <> "" and rollbackNO <> "" then
-		      App.RollBackInsertedFilePathRecord(basePath, rollBackDB, rollbackPeriod, rollbackNO)
+		      App.RollBackInsertedFilePathRecord(rollBackDB, rollbackPeriod, rollbackNO)
 		    end if
 		    return App.FunctionError
 		  end if
-		  apiClient.BeginTransaction()
 		  
-		  var sql as string = "select DealRemark, FilePath from Deals where NO = '"+deleteNO+"' and nextNO is NULL"
+		  // API経由で削除実行（論理削除）
+		  var result as Dictionary = apiClient.DeleteDeal(deletePeriod, deleteNO, deleteReason)
 		  
-		  return "OK"
+		  if result.HasKey("success") and result.Value("success").BooleanValue then
+		    return "OK"
+		  else
+		    var errorMsg as String = "削除に失敗しました"
+		    if result.HasKey("message") then
+		      errorMsg = errorMsg + ": " + result.Value("message").StringValue
+		    elseif result.HasKey("error") then
+		      errorMsg = errorMsg + ": " + result.Value("error").StringValue
+		    end if
+		    return errorMsg
+		  end if
 		End Function
 	#tag EndMethod
 
@@ -565,488 +309,17 @@ Inherits DesktopApplication
 	#tag Method, Flags = &h0
 		Function GetAPIServerURL() As string
 		  var apiServerURL as String = me.XmlPref.GetAPIServerURL()
-		  if apiServerURL = "" then
-		    return "http://localhost:8080"  // デフォルト値
-		  end if
 		  return apiServerURL
 		End Function
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function GetBaseFolderPath() As String
-		  var baseNode as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string = baseNode.GetAttribute("path")
-		  return basePath
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetDatabaseFile(dealPeriod as string) As FolderItem
-		  var baseNode as XmlNode = App.XmlPref.GetNode("BaseFolder")
-		  var basePath as string = baseNode.GetAttribute("path")
-		  var path as string = basePath+dealPeriod+"\Denchokun.db"
-		  var dbF as FolderItem = new FolderItem(path, FolderItem.PathModes.Native)
-		  return dbF
-		  
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetDealDatePartnerPrice(period as string, NO as string) As Dictionary
-		  var apiClient as APICLientClass = App.ConnectAPI(period )
-		  if apiClient = nil then
-		    MessageBox "failed to connect DB Error"
-		    return nil
-		  end if
-		  
-		  var sql as string = "select DealDate, DealPartner, DealPrice from Deals where NO = '"+NO+"'"
-		  var rowSet as RowSet
-		  Try
-		    rowSet = apiClient.SelectSQL(period, sql)
-		  Catch error As DatabaseException
-		    apiClient.Close
-		    MessageBox "GetDealDatePartnerPrice Error: " + error.Message
-		    return nil
-		  End Try
-		  if rowSet.RowCount = 0 then
-		    apiClient.Close
-		    MessageBox "GetDealDatePartnerPrice Error: No Such Deal NO=" +NO
-		    return nil
-		  end if
-		  var DealDate as string = rowSet.Column("DealDate").StringValue
-		  var DealPartner as string = DecodeSqlString(rowSet.Column("DealPartner").StringValue)
-		  var DealPrice as string = rowSet.Column("DealPrice").StringValue
-		  apiClient.Close
-		  Var d As New Dictionary("DealDate" : DealDate, "DealPartner" : DealPartner, "DealPrice" : DealPrice)
-		  return d
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetFileInStoreFolder(storeF as FolderItem) As FolderItem
-		  var aF as FolderItem
-		  for each aF in storeF.Children
-		    if left(aF.Name,4) <> "ts_" then
-		      return aF
-		    end if
-		  next
-		  
-		  return nil
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetRegDateAndHash(period as string, NO as string) As Dictionary
-		  var apiClient as APICLientClass = App.ConnectAPI(period )
-		  if apiClient = nil then
-		    MessageBox "failed to connect DB Error"
-		    return nil
-		  end if
-		  
-		  var sql as string = "select RegDate, Hash from Deals where NO = '"+NO+"'"
-		  var rowSet as RowSet
-		  Try
-		    rowSet = apiClient.SelectSQL(period, sql)
-		  Catch error As DatabaseException
-		    apiClient.Close
-		    MessageBox "GetRegDateAndHash Error: " + error.Message
-		    return nil
-		  End Try
-		  if rowSet.RowCount = 0 then
-		    apiClient.Close
-		    MessageBox "GetRegDateAndHash Error: No Such Deal NO=" +NO
-		    return nil
-		  end if
-		  var RegDate as string = rowSet.Column("RegDate").StringValue
-		  var Hash as string = rowSet.Column("Hash").StringValue
-		  apiClient.Close
-		  Var d As New Dictionary("RegDate" : RegDate, "Hash" : Hash)
-		  return d
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function GetSHA256inStoreFolder(storeF as FolderItem) As string
-		  var aF as FolderItem = GetFileInStoreFolder(storeF)
-		  if aF <> nil then
-		    var ret as string = GetSHA256(aF)
-		    return ret
-		  end if
-		  return ""
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function InsertDealForFileUnderTSAOff(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
-		  var storeFolderName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString
-		  var regFilePath as string
-		  if isTS then
-		    regFilePath = storeFolderName+"\"+dropF.Name
+		Function GetCurrentDealPeriod() As String
+		  if MainWin <> nil and MainWin.DealPeriodPopupMenu <> nil then
+		    return MainWin.DealPeriodPopupMenu.SelectedRowText
 		  else
-		    if dropF.NameExtensionMBS() <> "" then
-		      regFilePath = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString+"."+dropF.NameExtensionMBS
-		    else
-		      regFilePath = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString
-		    end if
+		    return ""
 		  end if
-		  
-		  
-		  var newHash as string
-		  if hash <> "" then
-		    newHash = hash
-		  else
-		    newHash = GetSHA256(dropF)
-		  end if
-		  
-		  Var d As DateTime
-		  d = DateTime.Now
-		  var sql as string
-		  if update then
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'"+regDate+"',"+_
-		    "'UPDATE',"+_
-		    "'"+EncodeSqlString(regFilePath)+"',"+_
-		    "'"+newHash+"'"+_
-		    ");"
-		  else
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "NULL,"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'NEW',"+_
-		    "'"+EncodeSqlString(regFilePath)+"',"+_
-		    "'"+newHash+"'"+_
-		    ");"
-		  end if
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    return "NG:insert into Deals Error: " + error.Message
-		  End Try
-		  
-		  var storePath as string = basePath+period+"\"
-		  var storeF as FolderItem = new FolderItem(storePath, FolderItem.PathModes.Native)
-		  
-		  if isTS then //even if TSAoff, previously TimeStamped, parent folder is copied
-		    dropF = dropF.Parent
-		    storeF = new FolderItem(storePath, FolderItem.PathModes.Native)
-		    var tempF as FolderItem = SpecialFolder.Temporary.Child(dropF.Parent.Name)
-		    if tempF.Exists then
-		      tempF.Remove()
-		    end if
-		    tempF = SpecialFolder.Temporary
-		    try
-		      dropF.Parent.CopyTo tempF
-		    Catch error as IOException
-		      return "NG:CopyTo Error: " + error.Message
-		    end Try
-		    var oldFolderName as string = dropF.Parent.Name //previous FolderName
-		    tempF = tempF.Child(oldFolderName)
-		    tempF.Name = storeFolderName
-		    try
-		      tempF.MoveTo storeF
-		    Catch error as IOException
-		      return "NG:CopyTo Error: " + error.Message
-		    end Try
-		  else
-		    try
-		      dropF.CopyTo storeF.Child(regFilePath) //newNO+"_"+.........
-		    Catch error as IOException
-		      return "NG:CopyTo Error: " + error.Message
-		    end Try
-		  end if
-		  
-		  return "OK"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function InsertDealForFileUnderTSAOn(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
-		  // sotreFolderName is only for tsaEnable=true
-		  var storeFolderName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString //in case dropF has extension
-		  
-		  var regFilePath as string
-		  regFilePath = storeFolderName+"\"+dropF.Name
-		  
-		  
-		  var newHash as string
-		  if hash <> "" then
-		    newHash = hash
-		  else
-		    newHash = GetSHA256(dropF)
-		  end if
-		  
-		  Var d As DateTime
-		  d = DateTime.Now
-		  var sql as string
-		  if update then
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'"+regDate+"',"+_
-		    "'UPDATE',"+_
-		    "'"+EncodeSqlString(regFilePath)+"',"+_
-		    "'"+newHash+"'"+_
-		    ");"
-		  else
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "NULL,"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'NEW',"+_
-		    "'"+EncodeSqlString(regFilePath)+"',"+_
-		    "'"+newHash+"'"+_
-		    ");"
-		  end if
-		  
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    return "NG:insert into Deals Error: " + error.Message
-		  End Try
-		  
-		  var storePath as string = basePath+period+"\"
-		  var storeF as FolderItem = nil
-		  if isTS then
-		    storeF = new FolderItem(storePath, FolderItem.PathModes.Native)
-		    var tempF as FolderItem = SpecialFolder.Temporary.Child(dropF.Parent.Name)
-		    if tempF.Exists then
-		      tempF.Remove()
-		    end if
-		    tempF = SpecialFolder.Temporary
-		    try
-		      dropF.Parent.CopyTo tempF
-		    Catch error as IOException
-		      return "NG:CopyTo Error: " + error.Message
-		    end Try
-		    var oldFolderName as string = dropF.Parent.Name //previous FolderName
-		    tempF = tempF.Child(oldFolderName)
-		    tempF.Name = storeFolderName
-		    try
-		      tempF.MoveTo storeF
-		    Catch error as IOException
-		      return "NG:CopyTo Error: " + error.Message
-		    end Try
-		  else
-		    storeF = new FolderItem(storePath+storeFolderName, FolderItem.PathModes.Native)
-		    try
-		      storeF.CreateFolder()
-		    Catch error as IOException
-		      return "NG:CreateFolder Error: " + error.Message
-		    end try
-		    // タイムスタンプ機能は削除
-		    
-		    try
-		      dropF.CopyTo storeF
-		    Catch error as IOException
-		      storeF.Remove()
-		      return "NG:CopyTo Error: " + error.Message
-		    end Try
-		  end if
-		  
-		  return "OK"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function InsertDealForFolderUnderTSAoff(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
-		  //if drop is Folder, means dropF is always newly dropped
-		  var zipName as string = dropF.Name+".zip"
-		  var zipF as FolderItem = SpecialFolder.Temporary.Child(zipName)
-		  var zip as new ZipCompressClass
-		  try
-		    zip.CompressFolder(dropF, zipF)
-		  Catch error as RuntimeException
-		    return "NG:CompressFolder Error: " + error.Message
-		  end Try
-		  
-		  var registeredFileName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString+".zip"
-		  
-		  var newHash as string
-		  if hash <> "" then
-		    newHash = hash
-		  else
-		    newHash = GetSHA256(zipF)
-		  end if
-		  
-		  Var d As DateTime
-		  d = DateTime.Now
-		  var sql as string
-		  if update then
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "'"+d.SQLDateTime+"'"+_
-		    "'"+regDate+"',"+_
-		    "'UPDATE',"+_
-		    "'"+EncodeSqlString(registeredFileName)+"',"+_
-		    "'"+newHash+"'"+_
-		    ");"
-		  else
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "NULL,"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'NEW',"+_
-		    "'"+EncodeSqlString(registeredFileName)+"',"+_
-		    "'"+newHash+"'"+_
-		    ");"
-		  end if
-		  
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    zipF.Remove // Since zipF is in Temporary
-		    return "NG:insert into Deals Error: " + error.Message
-		  End Try
-		  
-		  var storePath as string = basePath+period+"\"
-		  var storeF as FolderItem = new FolderItem(storePath, FolderItem.PathModes.Native)
-		  try
-		    zipF.MoveTo storeF.Child(registeredFileName)
-		  Catch error as IOException
-		    zipF.Remove() // zipF is still in Temporary since ERROR
-		    return "NG:CopyTo Error: " + error.Message
-		  end Try
-		  //zipF.Remove() // zipF is moved
-		  
-		  return "OK"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function InsertDealForFolderUnderTSAon(apiClient as APICLientClass, newNO as string, basePath as string, period as string, type as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string, update as Boolean) As string
-		  // sotreFolderName is only for tsaEnable=true
-		  var storeFolderName as string = newNO+"_"+dealDate+"_"+dealPartner+"_"+price.ToString //in case dropF has extension
-		  
-		  //if drop is Folder, means dropF is always newly dropped
-		  var zipName as string = dropF.Name+".zip"
-		  var zipF as FolderItem = SpecialFolder.Temporary.Child(zipName)
-		  var zip as new ZipCompressClass
-		  try
-		    zip.CompressFolder(dropF, zipF)
-		  Catch error as RuntimeException
-		    return "NG:CompressFolder Error: " + error.Message
-		  end Try
-		  
-		  var regFilePath as string = storeFolderName+"\"+dropF.Name+".zip"
-		  
-		  
-		  var newHash as string
-		  if hash <> "" then
-		    newHash = hash
-		  else
-		    newHash = GetSHA256(zipF)
-		  end if
-		  
-		  Var d As DateTime
-		  d = DateTime.Now
-		  var sql as string
-		  if update then
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'"+regDate+"',"+_
-		    "'UPDATE',"+_
-		    "'"+EncodeSqlString(regFilePath)+"',"+_ //zipName is under Folder
-		    "'"+newHash+"'"+_
-		    ");"
-		  else
-		    sql = "insert into Deals values('"+EncodeSqlString(newNO)+"',"+_
-		    "NULL,"+_
-		    "NULL,"+_
-		    "'"+EncodeSqlString(type)+"',"+_
-		    "'"+EncodeSqlString(dealDate)+"',"+_
-		    "'"+EncodeSqlString(dealName)+"',"+_
-		    "'"+EncodeSqlString(dealPartner)+"',"+_
-		    price.ToString+","+_
-		    "'"+EncodeSqlString(dealRemark)+"',"+_
-		    "NULL,"+_
-		    "'"+d.SQLDateTime+"',"+_
-		    "'NEW',"+_
-		    "'"+EncodeSqlString(regFilePath)+"',"+_ //zipName is under Folder
-		    "'"+newHash+"'"+_
-		    ");"
-		  end if
-		  
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    zipF.Remove  // zipF is in Temporary
-		    return "NG:insert into Deals Error: " + error.Message
-		  End Try
-		  
-		  var storePath as string = basePath+period+"\"
-		  var storeF as FolderItem
-		  storeF = new FolderItem(storePath+storeFolderName, FolderItem.PathModes.Native)
-		  try
-		    storeF.CreateFolder()
-		  Catch error as IOException
-		    zipF.Remove()  // zipF is in Temporary
-		    return "NG:CreateFolder Error: " + error.Message
-		  end Try
-		  
-		  // タイムスタンプ機能は削除
-		  
-		  try
-		    zipF.MoveTo storeF.Child(zipName)
-		  Catch error as IOException
-		    zipF.Remove()  // zipF is in Temporary
-		    storeF.Remove()
-		    return "NG:CopyTo Error: " + error.Message
-		  end Try
-		  
-		  return "OK"
 		End Function
 	#tag EndMethod
 
@@ -1082,7 +355,7 @@ Inherits DesktopApplication
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Sub RollBackInsertedFilePathRecord(basePath as string, rollBackApiClient as APICLientClass, rollbackPeriod as string, rollbackNO as string)
+		Sub RollBackInsertedFilePathRecord(rollBackApiClient as APICLientClass, rollbackPeriod as string, rollbackNO as string)
 		  var deleteFilePath as string
 		  Var rowsFound As RowSet
 		  Try
@@ -1100,27 +373,11 @@ Inherits DesktopApplication
 		  
 		  var sql as string = "delete from Deals where NO = '"+rollbackNO+"'"
 		  Try
-		    rollBackApiClient.ExecuteSQL(sql)
+		    rollBackApiClient.ExecuteSQL(rollbackPeriod, sql)
 		  Catch error As DatabaseException
 		    MessageBox("RollBackInsertFilePathRecord(): " + error.Message)
 		    return
 		  End Try
-		  
-		  var deleteF as new FolderItem(basePath+rollbackPeriod+"\"+deleteFilePath)
-		  if deleteF = nil then
-		    MessageBox("RollBackInsertFilePathRecord(): can't get deleteF")
-		    return
-		  end if
-		  if not deleteF.Exists then
-		    MessageBox("RollBackInsertFilePathRecord(): no such file("+deleteF.NativePath+")")
-		    return
-		  end if
-		  try
-		    deleteF.Remove()
-		  Catch error as IOException
-		    MessageBox("RollBackInsertFilePathRecord(): can't delete("+deleteF.NativePath+")")
-		    return
-		  end Try
 		End Sub
 	#tag EndMethod
 
@@ -1159,100 +416,6 @@ Inherits DesktopApplication
 		  End Try
 		  
 		  Return registerMBSPlugin(name, product, ym, serial)
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UpdateDealinDifferentPeriod(db as APICLientClass, basePath as string, oldPeriod as string, newPeriod as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
-		  // TODO: API経由の実装に変更予定
-		  return "NG:未実装"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UpdateDealinSamePeriod(db as APICLientClass, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as String) As string
-		  // TODO: API経由の実装に変更予定
-		  return "NG:未実装"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UpdateDealinSamePeriodForFile(apiClient as APICLientClass, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
-		  var ret, sql as string
-		  // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
-		  ret = App.InsertDealForFileUnderTSAOff(apiClient, newNO, basePath, period, dealType, dealDate, dealName, _
-		  dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
-		  if ret <> "OK" then
-		    return ret
-		  end if
-		  
-		  sql = "update Deals set nextNO='"+newNO+"' "+_
-		  "where NO='"+oldNO+"'"
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    return "update Deals Error: " + error.Message
-		  End Try
-		  
-		  sql = "update Deals set prevNO='"+oldNO+"' "+_
-		  "where NO='"+newNO+"'"
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    return "update Deals Error: " + error.Message
-		  End Try
-		  
-		  return "OK"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UpdateDealinSamePeriodForFolder(apiClient as APICLientClass, newNO as string, basePath as string, period as string, oldNO as string, dealType as string, dealDate as string, dealName as string, dealPartner as string, dealRemark as string, price as integer, dropF as FolderItem, hash as string, isTS as Boolean, regDate as string) As string
-		  var ret, sql as string
-		  // タイムスタンプ機能は削除: 常にTSA OFFの処理を使用
-		  ret = App.InsertDealForFolderUnderTSAOff(apiClient , newNO, basePath, period, dealType, dealDate, dealName, _
-		  dealPartner, dealRemark, price, dropF, hash, isTS, regDate, true)
-		  if ret <> "OK:" then
-		    return ret
-		  end if
-		  
-		  
-		  sql = "update Deals set nextNO='"+newNO+"' "+_
-		  "where NO='"+oldNO+"'"
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    return "update Deals Error: " + error.Message
-		  End Try
-		  
-		  sql = "update Deals set prevNO='"+oldNO+"' "+_
-		  "where NO='"+newNO+"'"
-		  Try
-		    apiClient.ExecuteSQL(sql)
-		  Catch error As DatabaseException
-		    return "update Deals Error: " + error.Message
-		  End Try
-		  
-		  
-		  return "OK"
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
-		Function UpdateRemarkByReason(oldRemark as string, label as string, reason as string) As string
-		  var re as New RegEx
-		  re.SearchPattern="\("+label+"：.*\)" // label prefers to be Zenkaku
-		  var match as RegExMatch = re.Search(oldRemark)
-		  if match = nil then // no Match
-		    if oldRemark = "" then
-		      return "("+label+"："+reason+")"
-		    else
-		      return oldRemark+"("+label+"："+reason+")"
-		    end if
-		  end if
-		  re.ReplacementPattern="("+label+"："+reason+")"
-		  var ret as string = re.Replace(oldRemark)
-		  return ret
 		End Function
 	#tag EndMethod
 

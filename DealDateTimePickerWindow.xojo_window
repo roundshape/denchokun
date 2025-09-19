@@ -1,179 +1,124 @@
 #tag DesktopWindow
-Begin DesktopWindow PopupInMDBWindow
+Begin DesktopWindow DealDateTimePickerWindow
    Backdrop        =   0
    BackgroundColor =   &cFFFFFF
    Composite       =   False
    DefaultLocation =   2
    FullScreen      =   False
    HasBackgroundColor=   False
-   HasCloseButton  =   False
+   HasCloseButton  =   True
    HasFullScreenButton=   False
    HasMaximizeButton=   False
    HasMinimizeButton=   False
-   Height          =   290
+   Height          =   230
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   32000
    MaximumWidth    =   32000
    MenuBar         =   ""
    MenuBarVisible  =   False
-   MinimumHeight   =   290
-   MinimumWidth    =   198
-   Resizeable      =   True
+   MinimumHeight   =   64
+   MinimumWidth    =   64
+   Resizeable      =   False
    Title           =   "Untitled"
    Type            =   1
-   Visible         =   False
+   Visible         =   True
    Width           =   198
-   Begin DesktopListBox TextList
+   Begin DesktopDateTimePicker DealDateTimePicker
+      Active          =   False
       AllowAutoDeactivate=   True
-      AllowAutoHideScrollbars=   True
-      AllowExpandableRows=   False
-      AllowFocusRing  =   True
-      AllowResizableColumns=   False
-      AllowRowDragging=   False
-      AllowRowReordering=   False
-      Bold            =   False
-      ColumnCount     =   1
-      ColumnWidths    =   ""
-      DefaultRowHeight=   -1
-      DropIndicatorVisible=   False
+      AllowFocusRing  =   False
+      AllowTabStop    =   True
+      DisplayMode     =   1
+      DisplaySeconds  =   False
       Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      GridLineStyle   =   0
-      HasBorder       =   True
-      HasHeader       =   False
-      HasHorizontalScrollbar=   False
-      HasVerticalScrollbar=   True
-      HeadingIndex    =   -1
-      Height          =   234
+      GraphicalDisplay=   True
+      Height          =   138
+      HourMode        =   0
       Index           =   -2147483648
-      InitialValue    =   ""
-      Italic          =   False
+      InitialParent   =   ""
       Left            =   0
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
       LockRight       =   True
       LockTop         =   True
-      RequiresSelection=   False
-      RowSelectionType=   0
+      PanelIndex      =   0
       Scope           =   0
       TabIndex        =   0
       TabPanelIndex   =   0
-      TabStop         =   True
+      TodayButtonCaption=   ""
       Tooltip         =   ""
-      Top             =   26
+      Top             =   0
       Transparent     =   False
-      Underline       =   False
       Visible         =   True
       Width           =   198
-      _ScrollOffset   =   0
-      _ScrollWidth    =   -1
+      _mIndex         =   0
+      _mInitialParent =   ""
+      _mName          =   ""
+      _mPanelIndex    =   0
    End
-   Begin InputTextClass InputText
+   Begin DesktopButton OKButton
       AllowAutoDeactivate=   True
-      AllowFocusRing  =   True
-      AllowSpellChecking=   False
-      AllowTabs       =   False
-      BackgroundColor =   &cFFFFFF
       Bold            =   False
+      Cancel          =   False
+      Caption         =   "OK"
+      Default         =   True
       Enabled         =   True
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Format          =   ""
-      HasBorder       =   True
       Height          =   22
-      Hint            =   ""
       Index           =   -2147483648
       Italic          =   False
-      Left            =   0
-      LockBottom      =   False
+      Left            =   6
+      LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
-      LockRight       =   True
-      LockTop         =   True
-      MaximumCharactersAllowed=   0
-      Password        =   False
-      ReadOnly        =   False
+      LockRight       =   False
+      LockTop         =   False
+      MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   1
       TabPanelIndex   =   0
       TabStop         =   True
-      Text            =   ""
-      TextAlignment   =   0
-      TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   2
+      Top             =   199
       Transparent     =   False
       Underline       =   False
-      ValidationMask  =   ""
       Visible         =   True
-      Width           =   177
+      Width           =   80
    End
-   Begin DesktopButton CloseButton
+   Begin DesktopButton CancelButton
       AllowAutoDeactivate=   True
       Bold            =   False
-      Cancel          =   False
-      Caption         =   "閉じる"
+      Cancel          =   True
+      Caption         =   "Cancel"
       Default         =   False
       Enabled         =   True
       FontName        =   "System"
       FontSize        =   0.0
       FontUnit        =   0
-      Height          =   29
+      Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   0
+      Left            =   118
       LockBottom      =   True
       LockedInPosition=   False
-      LockLeft        =   True
+      LockLeft        =   False
       LockRight       =   True
       LockTop         =   False
       MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   2
       TabPanelIndex   =   0
-      TabStop         =   False
+      TabStop         =   True
       Tooltip         =   ""
-      Top             =   261
+      Top             =   199
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   198
-   End
-   Begin DesktopButton ResetButton
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Cancel          =   False
-      Caption         =   "✖"
-      Default         =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   23
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   179
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   False
-      LockRight       =   True
-      LockTop         =   True
-      MacButtonStyle  =   0
-      Scope           =   0
-      TabIndex        =   3
-      TabPanelIndex   =   0
-      TabStop         =   False
-      Tooltip         =   ""
-      Top             =   2
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   18
+      Width           =   80
    End
 End
 #tag EndDesktopWindow
@@ -181,82 +126,36 @@ End
 #tag WindowCode
 	#tag Event
 		Sub Opening()
-		  // App.InMDBのnilチェック
-		  if App.InMDB = nil then
-		    MessageBox "In Memory データベースが初期化されていません"
-		    self.Close
-		    return
-		  end if
-		  
-		  // In Memory DBのDealPartnersテーブルから全データを読み込んでリストに表示
-		  try
-		    var rows as RowSet = App.InMDB.SelectSQL("SELECT name FROM TempTable ORDER BY name")
-		    self.TextList.RemoveAllRows
-		    For Each row As DatabaseRow In rows
-		      self.TextList.AddRow row.Column("name").StringValue
-		    next
-		  catch e as DatabaseException
-		    // エラーの場合は空のリストを表示
-		    MessageBox "データ取得エラー: " + e.Message
-		    self.TextList.RemoveAllRows
-		  end try
-		  
-		  // InputTextにフォーカスを設定
-		  self.InputText.SetFocus
+		  self.Canceled = false
 		End Sub
 	#tag EndEvent
 
 
-	#tag Method, Flags = &h0
-		Sub Constructor(t as string)
-		  // Calling the overridden superclass constructor.
-		  Super.Constructor
-		  self.Title = t
-		End Sub
-	#tag EndMethod
-
+	#tag Property, Flags = &h0
+		Canceled As Boolean
+	#tag EndProperty
 
 	#tag Property, Flags = &h0
-		InputTextValue As String
+		SelectedDate As DateTime
 	#tag EndProperty
 
 
 #tag EndWindowCode
 
-#tag Events TextList
-	#tag Event
-		Sub DoublePressed()
-		  if me.SelectedRowCount = 0 then
-		    return
-		  end if
-		  self.Close
-		End Sub
-	#tag EndEvent
-	#tag Event
-		Function CellPressed(row As Integer, column As Integer, x As Integer, y As Integer) As Boolean
-		  self.InputText.Text = me.CellTextAt(row, column)
-		End Function
-	#tag EndEvent
-#tag EndEvents
-#tag Events InputText
-	#tag Event
-		Sub TextChanged()
-		  var ret as string = me.TextChangedByControlKey(self.TextList, "TempTable")
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events CloseButton
+#tag Events OKButton
 	#tag Event
 		Sub Pressed()
-		  self.InputTextValue = self.InputText.Text
+		  self.Canceled = false
+		  self.SelectedDate = self.DealDateTimePicker.SelectedDate
 		  self.Close
 		End Sub
 	#tag EndEvent
 #tag EndEvents
-#tag Events ResetButton
+#tag Events CancelButton
 	#tag Event
 		Sub Pressed()
-		  self.InputText.Text = ""
+		  self.Canceled = true
+		  self.Close
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -419,7 +318,7 @@ End
 	#tag EndViewProperty
 	#tag ViewProperty
 		Name="FullScreen"
-		Visible=false
+		Visible=true
 		Group="Behavior"
 		InitialValue="False"
 		Type="Boolean"
@@ -451,7 +350,7 @@ End
 	#tag ViewProperty
 		Name="ImplicitInstance"
 		Visible=true
-		Group="Windows Behavior"
+		Group="Window Behavior"
 		InitialValue="True"
 		Type="Boolean"
 		EditorType=""
@@ -497,11 +396,11 @@ End
 		EditorType=""
 	#tag EndViewProperty
 	#tag ViewProperty
-		Name="InputTextValue"
+		Name="Canceled"
 		Visible=false
 		Group="Behavior"
 		InitialValue=""
-		Type="String"
-		EditorType="MultiLineEditor"
+		Type="Boolean"
+		EditorType=""
 	#tag EndViewProperty
 #tag EndViewBehavior

@@ -10,7 +10,7 @@ Begin DesktopWindow ManageDealPeriodWindow
    HasFullScreenButton=   False
    HasMaximizeButton=   False
    HasMinimizeButton=   False
-   Height          =   400
+   Height          =   442
    ImplicitInstance=   True
    MacProcID       =   0
    MaximumHeight   =   32000
@@ -23,7 +23,7 @@ Begin DesktopWindow ManageDealPeriodWindow
    Title           =   "Untitled"
    Type            =   1
    Visible         =   True
-   Width           =   270
+   Width           =   276
    Begin DesktopListBox DealPeriodList
       AllowAutoDeactivate=   True
       AllowAutoHideScrollbars=   True
@@ -47,7 +47,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       HasHorizontalScrollbar=   False
       HasVerticalScrollbar=   True
       HeadingIndex    =   -1
-      Height          =   244
+      Height          =   277
       Index           =   -2147483648
       InitialValue    =   ""
       Italic          =   False
@@ -68,7 +68,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Transparent     =   False
       Underline       =   False
       Visible         =   True
-      Width           =   270
+      Width           =   276
       _ScrollOffset   =   0
       _ScrollWidth    =   -1
    End
@@ -97,7 +97,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   361
+      Top             =   392
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -116,7 +116,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   176
+      Left            =   182
       LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   False
@@ -128,7 +128,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   361
+      Top             =   392
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -159,7 +159,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   247
+      Top             =   278
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -191,7 +191,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       TextAlignment   =   3
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   275
+      Top             =   306
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -223,7 +223,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       TextAlignment   =   3
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   301
+      Top             =   332
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -255,7 +255,7 @@ Begin DesktopWindow ManageDealPeriodWindow
       TextAlignment   =   3
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   327
+      Top             =   358
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -295,78 +295,12 @@ Begin DesktopWindow ManageDealPeriodWindow
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   275
+      Top             =   306
       Transparent     =   False
       Underline       =   False
       ValidationMask  =   ""
       Visible         =   True
-      Width           =   145
-   End
-   Begin DesktopLabel FromDate
-      AllowAutoDeactivate=   True
-      Bold            =   False
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      Height          =   20
-      Index           =   -2147483648
-      Italic          =   False
-      Left            =   81
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      Multiline       =   False
-      Scope           =   0
-      Selectable      =   False
-      TabIndex        =   8
-      TabPanelIndex   =   0
-      TabStop         =   True
-      Text            =   "未設定"
-      TextAlignment   =   0
-      TextColor       =   &c000000
-      Tooltip         =   ""
-      Top             =   301
-      Transparent     =   False
-      Underline       =   False
-      Visible         =   True
-      Width           =   127
-   End
-   Begin DesktopDateTimePicker FromDatePicker
-      Active          =   False
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   False
-      AllowTabStop    =   False
-      DisplayMode     =   1
-      DisplaySeconds  =   False
-      Enabled         =   True
-      GraphicalDisplay=   True
-      Height          =   22
-      HourMode        =   0
-      Index           =   -2147483648
-      InitialParent   =   ""
-      Left            =   58
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      PanelIndex      =   0
-      Scope           =   0
-      TabIndex        =   9
-      TabPanelIndex   =   0
-      TodayButtonCaption=   ""
-      Tooltip         =   ""
-      Top             =   299
-      Transparent     =   False
-      Visible         =   True
-      Width           =   18
-      _mIndex         =   0
-      _mInitialParent =   ""
-      _mName          =   ""
-      _mPanelIndex    =   0
+      Width           =   151
    End
    Begin DesktopLabel ToDate
       AllowAutoDeactivate=   True
@@ -379,11 +313,11 @@ Begin DesktopWindow ManageDealPeriodWindow
       Index           =   -2147483648
       Italic          =   False
       Left            =   81
-      LockBottom      =   False
+      LockBottom      =   True
       LockedInPosition=   False
       LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
+      LockRight       =   True
+      LockTop         =   False
       Multiline       =   False
       Scope           =   0
       Selectable      =   False
@@ -394,45 +328,11 @@ Begin DesktopWindow ManageDealPeriodWindow
       TextAlignment   =   0
       TextColor       =   &c000000
       Tooltip         =   ""
-      Top             =   327
+      Top             =   358
       Transparent     =   False
       Underline       =   False
       Visible         =   True
       Width           =   127
-   End
-   Begin DesktopDateTimePicker ToDatePicker
-      Active          =   False
-      AllowAutoDeactivate=   True
-      AllowFocusRing  =   False
-      AllowTabStop    =   False
-      DisplayMode     =   1
-      DisplaySeconds  =   False
-      Enabled         =   True
-      GraphicalDisplay=   True
-      Height          =   22
-      HourMode        =   0
-      Index           =   -2147483648
-      InitialParent   =   ""
-      Left            =   59
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      PanelIndex      =   0
-      Scope           =   0
-      TabIndex        =   11
-      TabPanelIndex   =   0
-      TodayButtonCaption=   ""
-      Tooltip         =   ""
-      Top             =   325
-      Transparent     =   False
-      Visible         =   True
-      Width           =   18
-      _mIndex         =   0
-      _mInitialParent =   ""
-      _mName          =   ""
-      _mPanelIndex    =   0
    End
    Begin DesktopButton RenameButton
       AllowAutoDeactivate=   True
@@ -447,19 +347,19 @@ Begin DesktopWindow ManageDealPeriodWindow
       Height          =   22
       Index           =   -2147483648
       Italic          =   False
-      Left            =   207
-      LockBottom      =   False
+      Left            =   212
+      LockBottom      =   True
       LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   False
       MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   12
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   275
+      Top             =   306
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -479,18 +379,18 @@ Begin DesktopWindow ManageDealPeriodWindow
       Index           =   -2147483648
       Italic          =   False
       Left            =   231
-      LockBottom      =   False
+      LockBottom      =   True
       LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   False
       MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   13
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   301
+      Top             =   332
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -510,18 +410,155 @@ Begin DesktopWindow ManageDealPeriodWindow
       Index           =   -2147483648
       Italic          =   False
       Left            =   231
-      LockBottom      =   False
+      LockBottom      =   True
       LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
+      LockLeft        =   False
+      LockRight       =   True
+      LockTop         =   False
       MacButtonStyle  =   0
       Scope           =   0
       TabIndex        =   14
       TabPanelIndex   =   0
       TabStop         =   True
       Tooltip         =   ""
-      Top             =   326
+      Top             =   358
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   22
+   End
+   Begin DesktopLabel FromDate
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   20
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   81
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   False
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   False
+      TabIndex        =   15
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   "未設定"
+      TextAlignment   =   0
+      TextColor       =   &c000000
+      Tooltip         =   ""
+      Top             =   332
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   127
+   End
+   Begin DesktopLabel MessageLabel
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   20
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   3
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   True
+      LockTop         =   False
+      Multiline       =   False
+      Scope           =   0
+      Selectable      =   False
+      TabIndex        =   16
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Text            =   ""
+      TextAlignment   =   2
+      TextColor       =   &c000000
+      Tooltip         =   ""
+      Top             =   418
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   267
+   End
+   Begin Timer MessageTimer
+      Enabled         =   True
+      Index           =   -2147483648
+      LockedInPosition=   False
+      Period          =   1000
+      RunMode         =   0
+      Scope           =   0
+      TabPanelIndex   =   0
+   End
+   Begin DesktopButton DealingFromDateTimePickerButton
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "V"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   22
+      Index           =   -2147483648
+      InitialParent   =   ""
+      Italic          =   False
+      Left            =   55
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   False
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   17
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   331
+      Transparent     =   False
+      Underline       =   False
+      Visible         =   True
+      Width           =   22
+   End
+   Begin DesktopButton DealingToDateTimePickerButton
+      AllowAutoDeactivate=   True
+      Bold            =   False
+      Cancel          =   False
+      Caption         =   "V"
+      Default         =   False
+      Enabled         =   True
+      FontName        =   "System"
+      FontSize        =   0.0
+      FontUnit        =   0
+      Height          =   22
+      Index           =   -2147483648
+      Italic          =   False
+      Left            =   55
+      LockBottom      =   True
+      LockedInPosition=   False
+      LockLeft        =   True
+      LockRight       =   False
+      LockTop         =   False
+      MacButtonStyle  =   0
+      Scope           =   0
+      TabIndex        =   18
+      TabPanelIndex   =   0
+      TabStop         =   True
+      Tooltip         =   ""
+      Top             =   357
       Transparent     =   False
       Underline       =   False
       Visible         =   True
@@ -647,6 +684,31 @@ End
 		End Sub
 	#tag EndMethod
 
+	#tag Method, Flags = &h21
+		Private Function ValidatePeriodDates(periodData as DealPeriodClass, ByRef errors() as String) As Boolean
+		  // 未設定の場合はOK
+		  if periodData.FromDate = "未設定" or periodData.ToDate = "未設定" then
+		    return True
+		  end if
+		  
+		  try
+		    var fromDateTime as DateTime = DateTime.FromString(periodData.FromDate.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		    var toDateTime as DateTime = DateTime.FromString(periodData.ToDate.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		    
+		    if fromDateTime > toDateTime then
+		      errors.Add(periodData.Name + ": 開始日が終了日より後になっています (" + periodData.FromDate + " > " + periodData.ToDate + ")")
+		      return False
+		    end if
+		    
+		    return True
+		    
+		  catch error as RuntimeException
+		    errors.Add(periodData.Name + ": 日付形式が不正です")
+		    return False
+		  end try
+		End Function
+	#tag EndMethod
+
 
 #tag EndWindowCode
 
@@ -688,16 +750,18 @@ End
 		  
 		  var successCount as Integer = 0
 		  var errorCount as Integer = 0
+		  var validationErrors() as String
 		  
 		  try
 		    for i as Integer = 0 to self.DealPeriodList.LastRowIndex
 		      var periodData as DealPeriodClass = self.DealPeriodList.RowTagAt(i)
 		      
 		      if periodData <> nil then
-		        var updateData as new Dictionary
-		        updateData.Value("name") = periodData.Name
-		        updateData.Value("fromDate") = periodData.FromDate
-		        updateData.Value("toDate") = periodData.ToDate
+		        // 日付チェックを追加
+		        if not ValidatePeriodDates(periodData, validationErrors) then
+		          errorCount = errorCount + 1
+		          continue
+		        end if
 		        
 		        var result as Dictionary = apiClient.UpdatePeriodDates(periodData.Name, periodData.FromDate, periodData.ToDate)
 		        if result.HasKey("success") and result.Value("success").BooleanValue then
@@ -708,13 +772,24 @@ End
 		      end if
 		    next
 		    
+		    if validationErrors.Count > 0 then
+		      var errorMsg as String = "以下の期間で日付エラーがあります：" + EndOfLine
+		      for each error as String in validationErrors
+		        errorMsg = errorMsg + "• " + error + EndOfLine
+		      next
+		      MessageBox errorMsg
+		      return
+		    end if
+		    
 		    if errorCount = 0 then
-		      MessageBox "すべての期間設定を保存しました（" + successCount.ToString + "件）"
+		      MessageLabel.Text = "更新しました"
+		      MessageLabel.Visible = True
+		      MessageTimer.Period = 1000
+		      MessageTimer.Mode = 1
 		    else
 		      MessageBox successCount.ToString + "件保存、" + errorCount.ToString + "件エラー"
 		    end if
 		    
-		    self.Close
 		  catch error as RuntimeException
 		    MessageBox "保存エラー: " + error.Message
 		  end try
@@ -765,38 +840,6 @@ End
 		  catch error as RuntimeException
 		    MessageBox "サーバー接続エラー: " + error.Message
 		  end try
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events FromDatePicker
-	#tag Event
-		Sub DateChanged(value as DateTime)
-		  if self.DealPeriodList.SelectedRowCount = 0 then
-		    return
-		  end if
-		  
-		  var aItem as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  aItem.FromDate = me.SelectedDate.SQLDate
-		  self.FromDate.Text = me.SelectedDate.SQLDate
-		  
-		  var v as String = aItem.Name + " (" + aItem.FromDate + " - " + aItem.ToDate + ")"
-		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = v
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events ToDatePicker
-	#tag Event
-		Sub DateChanged(value as DateTime)
-		  if self.DealPeriodList.SelectedRowCount = 0 then
-		    return
-		  end if
-		  
-		  var aItem as DealPeriodClass = self.DealPeriodList.RowTagAt(self.DealPeriodList.SelectedRowIndex)
-		  aItem.ToDate = me.SelectedDate.SQLDate
-		  self.ToDate.Text = me.SelectedDate.SQLDate
-		  
-		  var v as String = aItem.Name + " (" + aItem.FromDate + " - " + aItem.ToDate + ")"
-		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex, 1) = v
 		End Sub
 	#tag EndEvent
 #tag EndEvents
@@ -896,6 +939,87 @@ End
 		  self.ToDate.Text = "未設定"
 		  var v as string = selectedPeriod.Name+" ("+selectedPeriod.FromDate+" - "+selectedPeriod.ToDate+")"
 		  self.DealPeriodList.CellTextAt(self.DealPeriodList.SelectedRowIndex,1) = v
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events MessageTimer
+	#tag Event
+		Sub Action()
+		  MessageLabel.Visible = False
+		  MessageTimer.Mode = 0   // 念のため停止
+		  
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events DealingFromDateTimePickerButton
+	#tag Event
+		Sub Pressed()
+		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
+		  
+		  var win as new DealDateTimePickerWindow
+		  var screenWinLeft as integer = self.Left+self.fromDate.Left
+		  var screenWinTop as integer = 30+self.Top+self.fromDate.Top+self.fromDate.Height //30 is windows title
+		  if screenWinTop+win.Height <= screenHeight then
+		    win.Top = screenWinTop
+		  else
+		    win.Top = screenWinTop-win.Height-self.fromDate.Height-30
+		  end if
+		  win.Left = screenWinLeft
+		  
+		  if self.fromDate.Text <> "" then
+		    if self.fromDate.Text = "未設定" then
+		      win.DealDateTimePicker.SelectedDate = DateTime.Now
+		    else
+		      try
+		        win.DealDateTimePicker.SelectedDate = DateTime.FromString(self.fromDate.Text.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		      catch error as RuntimeException
+		        // 日付解析に失敗した場合は今日の日付を設定
+		        win.DealDateTimePicker.SelectedDate = DateTime.Now
+		      end try
+		    end if
+		  end if
+		  
+		  win.ShowModal
+		  
+		  if win.Canceled <> True and win.SelectedDate <> nil then
+		    self.fromDate.Text = win.SelectedDate.SQLDate
+		  end if
+		End Sub
+	#tag EndEvent
+#tag EndEvents
+#tag Events DealingToDateTimePickerButton
+	#tag Event
+		Sub Pressed()
+		  var screenHeight as integer = DesktopDisplay.DisplayAt(0).Height
+		  
+		  var win as new DealDateTimePickerWindow
+		  var screenWinLeft as integer = self.Left+self.toDate.Left
+		  var screenWinTop as integer = 30+self.Top+self.toDate.Top+self.toDate.Height //30 is windows title
+		  if screenWinTop+win.Height <= screenHeight then
+		    win.Top = screenWinTop
+		  else
+		    win.Top = screenWinTop-win.Height-self.toDate.Height-30
+		  end if
+		  win.Left = screenWinLeft
+		  
+		  if self.toDate.Text <> "" then
+		    if self.toDate.Text = "未設定" then
+		      win.DealDateTimePicker.SelectedDate = DateTime.Now
+		    else
+		      try
+		        win.DealDateTimePicker.SelectedDate = DateTime.FromString(self.toDate.Text.ReplaceAll("-", "/"), New Locale("ja-JP"), TimeZone.Current)
+		      catch error as RuntimeException
+		        // 日付解析に失敗した場合は今日の日付を設定
+		        win.DealDateTimePicker.SelectedDate = DateTime.Now
+		      end try
+		    end if
+		  end if
+		  
+		  win.ShowModal
+		  
+		  if win.Canceled <> True and win.SelectedDate <> nil then
+		    self.toDate.Text = win.SelectedDate.SQLDate
+		  end if
 		End Sub
 	#tag EndEvent
 #tag EndEvents
