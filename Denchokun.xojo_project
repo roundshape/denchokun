@@ -3,7 +3,6 @@ RBProjectVersion=2023.04
 MinIDEVersion=20210300
 OrigIDEVersion=20230400
 Class=XmlPrefClass;XmlPrefClass.xojo_code;&h00000000133847FF;&h0000000000000000;false
-Class=OCRClass;OCRClass.xojo_code;&h000000002F134FFF;&h0000000000000000;false
 Class=DealPeriodClass;DealPeriodClass.xojo_code;&h0000000025AB5FFF;&h0000000000000000;false
 FileTypeSet=AllFileTypes;AllFileTypes.xojo_filetypeset;&h00000000445317FF;&h0000000000000000;false
 Module=MyLibrary;MyLibrary.xojo_code;&h00000000361F07FF;&h0000000000000000;false

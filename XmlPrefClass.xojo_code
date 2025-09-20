@@ -127,46 +127,6 @@ Inherits XmlDocument
 	#tag EndMethod
 
 	#tag Method, Flags = &h0
-		Function InitializeOCR(afterNode as XmlNode) As integer
-		  // OCRノードが既に存在するかチェック
-		  var existingOCR as XmlNode = me.GetNode("OCR")
-		  if existingOCR <> nil then
-		    return 0  // 既に存在する場合は何もしない
-		  end if
-		  
-		  // OCRノード作成
-		  var ocrNode as XmlNode = me.CreateElement("OCR")
-		  
-		  // Setupノード作成
-		  var ocrSetupNode as XmlNode = me.CreateElement("Setup")
-		  ocrSetupNode.SetAttribute("workingDirectory","C:\Program Files\Tesseract-OCR")
-		  ocrSetupNode.SetAttribute("processLib","liblept-5.dll")
-		  ocrSetupNode.SetAttribute("mainLib","libtesseract-5.dll")
-		  ocrSetupNode.SetAttribute("tessdata","C:\Program Files\Tesseract-OCR\tessdata")
-		  ocrSetupNode.SetAttribute("languages","eng+jpn")
-		  var node as XmlNode = ocrNode.AppendChild(ocrSetupNode)
-		  
-		  // Outputノード作成
-		  var ocrOutputNode as XmlNode = me.CreateElement("Output")
-		  ocrOutputNode.SetAttribute("filename", "OCRout.txt")
-		  ocrOutputNode.SetAttribute("encoding", "UTF8")
-		  node = ocrNode.AppendChild(ocrOutputNode)
-		  
-		  // afterNodeの次に挿入
-		  var nextNode as XmlNode = afterNode.NextSibling
-		  if nextNode = nil then
-		    // afterNodeが最後の要素の場合は末尾に追加
-		    node = afterNode.Parent.AppendChild(ocrNode)
-		  else
-		    // afterNodeの次の位置に挿入
-		    node = afterNode.Parent.Insert(ocrNode, nextNode)
-		  end if
-		  
-		  return 0
-		End Function
-	#tag EndMethod
-
-	#tag Method, Flags = &h0
 		Function LoadPreference() As Integer
 		  var pref as folderItem
 		  var prefPath as string
@@ -200,14 +160,6 @@ Inherits XmlDocument
 		    root = me.FirstChild
 		    if root.GetAttribute( "version") <> App.version then
 		      root.SetAttribute( "version", App.version)
-		      
-		      // From here, set default values of updated versions above 1-0-1
-		      //OCR
-		      var inputLimitNode as XmlNode = me.GetNode("InputLimit")
-		      ret = me.InitializeOCR(inputLimitNode)
-		      if ret < 0 then
-		        return ret
-		      end if
 		      
 		      me.SavePreference()
 		    end if

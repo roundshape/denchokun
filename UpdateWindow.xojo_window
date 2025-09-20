@@ -774,56 +774,6 @@ Begin DesktopWindow UpdateWindow
       Visible         =   True
       Width           =   22
    End
-   Begin DesktopBevelButton OCRButton
-      Active          =   False
-      AllowAutoDeactivate=   True
-      AllowFocus      =   False
-      AllowTabStop    =   False
-      BackgroundColor =   &c00000000
-      BevelStyle      =   0
-      Bold            =   False
-      ButtonStyle     =   0
-      Caption         =   ""
-      CaptionAlignment=   3
-      CaptionDelta    =   0
-      CaptionPosition =   1
-      Enabled         =   True
-      FontName        =   "System"
-      FontSize        =   0.0
-      FontUnit        =   0
-      HasBackgroundColor=   False
-      Height          =   33
-      Icon            =   673654783
-      IconAlignment   =   0
-      IconDeltaX      =   0
-      IconDeltaY      =   0
-      Index           =   -2147483648
-      InitialParent   =   ""
-      Italic          =   False
-      Left            =   0
-      LockBottom      =   False
-      LockedInPosition=   False
-      LockLeft        =   True
-      LockRight       =   False
-      LockTop         =   True
-      MenuStyle       =   0
-      PanelIndex      =   0
-      Scope           =   0
-      TabIndex        =   30
-      TabPanelIndex   =   0
-      TextColor       =   &c00000000
-      Tooltip         =   ""
-      Top             =   2
-      Transparent     =   False
-      Underline       =   False
-      Value           =   False
-      Visible         =   True
-      Width           =   37
-      _mIndex         =   0
-      _mInitialParent =   ""
-      _mName          =   ""
-      _mPanelIndex    =   0
-   End
    Begin DesktopSeparator Separator1
       Active          =   False
       AllowAutoDeactivate=   True
@@ -1729,16 +1679,6 @@ End
 		End Sub
 	#tag EndEvent
 	#tag Event
-		Function KeyDown(key As String) As Boolean
-		  if key.Asc = 20 then // Ctrl+t
-		    var ret as string = App.OCR.DoOCR(self.DropFilePathLabel.Text, self.RunProgressWheel, self.StatusLabel)
-		    if ret <> "OK" then
-		      self.StatusLabel.Text = ret
-		    end if
-		  end if
-		End Function
-	#tag EndEvent
-	#tag Event
 		Function MouseDown(x As Integer, y As Integer) As Boolean
 		  me.SetFocus()
 		End Function
@@ -1865,16 +1805,6 @@ End
 		  win.InputText.Text = self.DealingPartnerField.Text
 		  win.ShowModal
 		  self.DealingPartnerField.Text = win.InputTextValue
-		End Sub
-	#tag EndEvent
-#tag EndEvents
-#tag Events OCRButton
-	#tag Event
-		Sub Pressed()
-		  var ret as string = App.OCR.DoOCR(self.DropFilePathLabel.Text, self.RunProgressWheel, self.StatusLabel)
-		  if ret <> "OK" then
-		    self.StatusLabel.Text = ret
-		  end if
 		End Sub
 	#tag EndEvent
 #tag EndEvents

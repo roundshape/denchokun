@@ -48,11 +48,6 @@ Inherits DesktopApplication
 		    launchWin.VersionLabel.Text = "Version："+App.Version
 		    launchWin.VersionLabel.Refresh(true)
 		    
-		    //---- Do many while launchwin showing
-		    if me.OCR = nil then
-		      me.OCR = new OCRClass
-		    end if
-		    
 		    App.DoEvents(100)
 		  next
 		  launchWin.Close
@@ -466,10 +461,6 @@ Inherits DesktopApplication
 
 	#tag Property, Flags = &h0
 		mMutex As Mutex
-	#tag EndProperty
-
-	#tag Property, Flags = &h0
-		OCR As OCRClass
 	#tag EndProperty
 
 	#tag Property, Flags = &h0
