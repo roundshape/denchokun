@@ -20,11 +20,6 @@
 - 期間別の取引データ整理
 - 検索・フィルタリング機能
 
-### 🔍 OCR機能
-- Tesseract OCRエンジンを使用した文字認識
-- 日本語・英語の文字認識に対応
-- スキャンした書類からのテキスト抽出
-
 ### 💾 データベース管理
 - SQLiteベースのローカルデータベース
 - ハッシュ値による重複チェック
@@ -32,14 +27,12 @@
 
 ### 🔧 設定管理
 - XML形式の設定ファイル（Denchokun.pref）
-- OCRエンジンの設定カスタマイズ
 - MBSライセンス情報の管理
 
 ## システム要件
 
 ### 必要環境
 - **OS**: Windows 64bit
-- **OCRエンジン**: Tesseract-OCR（推奨パス: `C:\Program Files\Tesseract-OCR`）
 - **ライブラリ**: MBS Xojo Plugins（ライセンス必要）
 
 ### 推奨スペック
@@ -57,10 +50,7 @@
 **インストーラーの作成方法:**  
 プロジェクトには `Denchokun.iss` ファイルが用意されているため、Inno Setupを使用してsetup.exeを作成できます。
 
-### 2. OCR機能について
-1. Tesseract-OCRをインストール
-
-### 3. MonkeyBread Software Plugin(MBS Complete)について
+### 2. MonkeyBread Software Plugin(MBS Complete)について
 1. 本アプリではMBS Pluginを利用しているため、そのライセンスが必要です
 2. アプリケーションを起動してライセンス情報を入力
 
@@ -83,10 +73,6 @@
    - キーワード検索でデータを絞り込み
    - 詳細画面で取引内容を確認
 
-3. **OCR機能の使用**
-   - 画像ファイルから自動でテキストを抽出
-   - 設定画面でOCRエンジンのパラメータを調整
-
 ## 設定ファイル
 
 ### Denchokun.pref
@@ -96,10 +82,6 @@ XMLフォーマットの設定ファイルで、以下の情報を管理しま�
 <Denchokun version="2.0.0">
   <MainWindow Left="100" Top="100" Width="482" Height="436"/>
   <BaseFolder path="C:\Users\...\Documents" workingPeriod=""/>
-  <OCR>
-    <Setup workingDirectory="C:\Program Files\Tesseract-OCR" 
-           languages="eng+jpn"/>
-  </OCR>
   <MBSLicense Name="" Product="" YearMonth="" SerialKey=""/>
 </Denchokun>
 ```
@@ -128,9 +110,6 @@ Inno Setupスクリプト（`Denchokun.iss`）を使用してインストーラ�
 ### MBS Plugins
 このアプリケーションは商用ライブラリであるMBS Xojo Pluginsを使用しています。
 使用には有効なMBSライセンスが必要です。
-
-### Tesseract OCR
-Apache License 2.0の下で配布されているオープンソースOCRエンジンを使用しています。
 
 ## 開発者情報
 
